@@ -1,0 +1,36 @@
+name: Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: No dependencies to install
+        run: |
+          test ! -f package-lock.json || npm ci
+      - name: Lantern suite
+        run: node test-node.js
+      - name: The host starts and answers on a real port
+        run: |
+          node server.js 8137 &
+          HOST_PID=$!
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8137/api/health > /tmp/health.json; then break; fi
+            sleep 1
+          done
+          cat /tmp/health.json
+          grep -q '"ok":true' /tmp/health.json
+          curl -fsS http://127.0.0.1:8137/ | grep -q 'Lantern'
+          kill $HOST_PID
