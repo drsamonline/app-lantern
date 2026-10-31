@@ -63,7 +63,13 @@ const Search = (function () {
 
   /** A window of text around the first matching term, for the result list. */
   function snippetFor(text, terms) {
-    var flat = String(text == null ? "" : text).replace(/\s+/g, " ").trim();
+    /* Documents may be HTML. A snippet showing "<h1>Burns</h1><p>Cool the" is
+       markup leaking into prose, so the tags come out before the window is cut. */
+    var flat = String(text == null ? "" : text)
+      .replace(/<[^>]*>/g, " ")
+      .replace(/&nbsp;/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
     var lower = flat.toLowerCase();
     var at = -1;
     for (var i = 0; i < terms.length; i++) {

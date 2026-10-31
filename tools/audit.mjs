@@ -69,8 +69,25 @@ for (const d of pack.docs) {
   ok("demo doc " + d.path + " matches the pack", !!got && got.text === d.content && got.title === d.title);
 }
 
+/* 4b. The demo carries the library inside itself: no fetch, nothing to fail. */
+const demoHtml = html["docs/demo/index.html"];
+const inlined = demoHtml.match(/<script id="library" type="application\/json">([\s\S]*?)<\/script>/);
+ok("the demo page carries its library inline", !!inlined);
+if (inlined) {
+  let carried = null;
+  try { carried = JSON.parse(inlined[1]); } catch (e) { /* reported below */ }
+  ok("the inlined library parses", !!carried);
+  if (carried) {
+    ok("the inlined library matches the pack",
+       carried.docs.length === pack.docs.length &&
+       pack.docs.every((d) => (carried.docs.find((x) => x.path === d.path) || {}).text === d.content),
+       "run node tools/build.mjs");
+  }
+}
+ok("the demo fetches nothing", !/\bfetch\s*\(/.test(demoHtml));
+
 /* 5. The demo runs the same search code as the host — that is the whole claim. */
-ok("the demo page loads lib/search.js", /src="\.\.\/lib\/search\.js"/.test(html["docs/demo/index.html"]));
+ok("the demo page loads lib/search.js", /src="\.\.\/\.\.\/lib\/search\.js"/.test(html["docs/demo/index.html"]));
 ok("the server requires lib/search.js", /require\("\.\/lib\/search\.js"\)/.test(read("server.js")));
 ok("the demo does not re-implement search",
    !/function\s+tokenise|new Map\(\)/.test(html["docs/demo/index.html"]));

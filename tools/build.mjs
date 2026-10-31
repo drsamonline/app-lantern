@@ -66,6 +66,20 @@ const library = {
 };
 writeOut("docs/demo/library.json", JSON.stringify(library, null, 2) + "\n");
 
+/* The demo page carries its own copy, so it works from a disk with no server —
+   the point of an offline app is that its demo opens offline too. */
+const demoPath = "docs/demo/index.html";
+const demoBefore = read(demoPath);
+const demoAfter = demoBefore.replace(
+  /(<script id="library" type="application\/json">)[\s\S]*?(<\/script>)/,
+  (m, open, close) => open + JSON.stringify(library) + close
+);
+if (demoAfter === demoBefore && !demoBefore.includes(JSON.stringify(library))) {
+  console.error("docs/demo/index.html has no library slot to fill");
+  process.exit(1);
+}
+writeOut(demoPath, demoAfter);
+
 /* --------------------------------------------------------- single-file build */
 
 const ASSETS = ["index.html", "lan-kit.js", "icon.svg"];
