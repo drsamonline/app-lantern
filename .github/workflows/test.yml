@@ -22,6 +22,16 @@ jobs:
           test ! -f package-lock.json || npm ci
       - name: Lantern suite
         run: node test-node.js
+      - name: The build is current
+        run: |
+          node tools/build.mjs
+          if ! git diff --quiet -- docs/demo/library.json dist/; then
+            echo "::error::the committed build is stale - run node tools/build.mjs and commit the result"
+            git --no-pager diff --stat -- docs/demo/library.json dist/
+            exit 1
+          fi
+      - name: The audit
+        run: node tools/audit.mjs
       - name: The host starts and answers on a real port
         run: |
           node server.js 8137 &

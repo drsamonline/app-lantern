@@ -1,19 +1,27 @@
 # Lantern
 
+[![live demo](https://img.shields.io/badge/live%20demo-open%20the%20library-f0b429?style=flat-square&labelColor=0b0e12)](https://drsamonline.github.io/app-lantern/demo/)
 [![test](https://github.com/drsamonline/app-lantern/actions/workflows/test.yml/badge.svg)](https://github.com/drsamonline/app-lantern/actions/workflows/test.yml)
-[![license](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue)](LICENSE)
-[![node](https://img.shields.io/badge/node-%3E%3D18-339933)](package.json)
-[![dependencies](https://img.shields.io/badge/runtime%20dependencies-none-22c55e)](package.json)
+[![audit](https://img.shields.io/badge/audit-in%20the%20suite-f0b429?style=flat-square&labelColor=0b0e12)](tools/audit.mjs)
+[![licence](https://img.shields.io/badge/licence-PolyForm%20Noncommercial%201.0.0-f0b429?style=flat-square&labelColor=0b0e12)](LICENSE)
+[![dependencies](https://img.shields.io/badge/runtime%20deps-0-5fbf8a?style=flat-square&labelColor=0b0e12)](package.json)
+[![network](https://img.shields.io/badge/network-none-5fbf8a?style=flat-square&labelColor=0b0e12)](#what-it-does-when-things-go-wrong)
 
 **A whole library, served over your own Wi-Fi, with no internet at any point.**
 
-One device — a laptop, a Raspberry Pi, a phone that can run Node — becomes a local
+One device — a laptop, a Raspberry Pi, a phone that runs Node — becomes a local
 content server. Everyone else on the same network opens the address it prints, in a
 **plain browser**, and browses, searches and reads a bundled library. Nothing leaves
 the host unless you export it.
 
-This is an "Internet-in-a-Box" as an app: a school, clinic or village gets a
-searchable library for the cost of one device and none of the connectivity.
+*Internet-in-a-Box, as an app.* A school, clinic or village gets a searchable library
+for the cost of one device and none of the connectivity.
+
+**[Open the live demo →](https://drsamonline.github.io/app-lantern/demo/)** — the real
+client and the real search code, running in your browser over a pre-built copy of the
+starter pack.
+
+![Lantern](docs/icon-512.png)
 
 ## Run it
 
@@ -35,6 +43,24 @@ Anyone on the Wi-Fi can now read and search it.
 
 There is nothing to install and nothing to build: the host is one Node file with
 **no dependencies**, and the client is one page with no build step.
+
+### Or copy one file
+
+`dist/lantern.js` is the **whole app in one file** — server, search index and client,
+with the page and icon carried inside it. Copy it to a machine with Node and run it;
+there is no folder to keep beside it.
+
+```bash
+node lantern.js 8080
+```
+
+## The three parts
+
+| | |
+|---|---|
+| **the host** | one Node file, zero dependencies: serves the page, the library and the search index |
+| **the packs** | content, hashed on import and re-verified on every load |
+| **the reader** | a plain browser on the same Wi-Fi — no app, no account, no internet |
 
 ## What it does
 
@@ -66,7 +92,7 @@ A pack is one JSON file:
 On import Lantern writes each document and records its **SHA-256 and byte length**
 in the pack's own `manifest.json`. It re-checks both every time it loads a pack.
 
-## When things go wrong
+## What it does when things go wrong
 
 | Situation | What Lantern does |
 |---|---|
@@ -76,22 +102,47 @@ in the pack's own `manifest.json`. It re-checks both every time it loads a pack.
 | A bundle that is not JSON, or has no documents | Refused with the reason shown. |
 | No peers, no internet | Nothing changes: the library still opens on the host, and says how many documents it holds. |
 
-## Tests
+## The proof
 
 ```bash
-node test-node.js     # 49 passed, 0 failed
+node test-node.js      # 60 assertions
+node tools/audit.mjs   # every claim in this README, checked against the repo
+node tools/build.mjs   # the demo library, the single file and the bundle
 ```
 
-Every claim above is checked **over real HTTP against a real host**, because the
-point of a LAN app is that a browser on the network can read it. The suite covers:
-the host taking a port and answering, the client page being served, import and the
-true byte size read back off disk, a document read over HTTP, phrase-first ranking
-(ahead of documents that only carry the words), search after a pack is removed,
-traversal refusal, an unsafe bundle path, a bundle that is not JSON, a write that
-fails with `ENOSPC`, and a checksum mismatch being quarantined.
+The suite runs **over real HTTP against a real host**, because the point of a LAN app
+is that a browser on the network can read it. It uses Node's `http` rather than
+`fetch`, so the test never depends on the internet's plumbing.
 
-The assertions were checked to **bite**: with the phrase bonus removed and both
-traversal guards removed, 10 of them fail.
+What it covers: the host taking a port and answering; the client page being served;
+import, and the true byte size read back off disk; a document read over HTTP;
+phrase-first ranking **ahead of documents that only carry the words**; search after a
+pack is removed; traversal refusal at request and at import; a bundle that is not
+JSON; a write that fails with `ENOSPC`; a checksum mismatch being quarantined; **the
+builds** (a second build changes nothing, the bundle carries every file, and the
+single file copied alone into an empty folder still serves the page and the icon);
+and the audit itself.
+
+**Checked to bite**, not just to pass: with the phrase bonus removed and both
+traversal guards removed, 10 assertions fail.
+
+## Layout
+
+```
+server.js              the host — zero dependencies
+lib/search.js          the index and the ranking, shared by the host and the demo page
+public/                the client: index.html, lan-kit.js, icon.svg
+docs/                  the landing page, the demo, the icon
+docs/demo/             the live demo (search + reader, over a built copy of the pack)
+examples/              a starter pack to import
+tools/build.mjs        demo library → dist/lantern.js → dist/lantern-<ver>.zip
+tools/audit.mjs        the claims, checked
+dist/                  the built single file and the portable bundle
+```
+
+The demo page loads **the same `lib/search.js`** the host runs. A demo that
+re-implements the search would drift from the app, and a demo that drifts is a lie
+with a nice font — so `tools/audit.mjs` fails if the demo ever stops using it.
 
 ## Built on
 

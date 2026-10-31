@@ -270,6 +270,76 @@ async function main() {
   eq(alone.ok, true, "the library opens with nothing else on the network");
   eq(alone.packs, 1, "and reports the one pack it holds");
 
+  /* 14. The builds. A "build" that has never been run is a folder of hopes. */
+  const { execFileSync, spawn } = require("child_process");
+  const repoRoot = __dirname;
+
+  const first = execFileSync(process.execPath, ["tools/build.mjs"], { cwd: repoRoot, encoding: "utf8" });
+  ok(/dist\/lantern\.js/.test(first), "the build reports the single file");
+  const second = execFileSync(process.execPath, ["tools/build.mjs"], { cwd: repoRoot, encoding: "utf8" });
+  ok(/everything already current/.test(second),
+     "a second build changes nothing, so the committed artefacts are current");
+
+  const pkg = JSON.parse(fs.readFileSync(path.join(repoRoot, "package.json"), "utf8"));
+  const zipPath = path.join(repoRoot, "dist", "lantern-" + pkg.version + ".zip");
+  ok(fs.existsSync(zipPath), "the bundle exists at the version in package.json");
+  const zipBuf = fs.readFileSync(zipPath);
+  eq(zipBuf.subarray(0, 2).toString("binary"), "PK", "the bundle starts with a zip signature");
+  const entries = (zipBuf.toString("binary").match(/PK\u0001\u0002/g) || []).length;
+  ok(entries >= 10, "the bundle carries every file (" + entries + " entries)");
+  ok(zipBuf.toString("utf8").includes("START-HERE.txt"), "the bundle says how to start");
+
+  /* The single file must be the WHOLE app: copied alone into an empty folder,
+     with no public/ beside it, it still serves the page and the icon. */
+  const lone = fs.mkdtempSync(path.join(os.tmpdir(), "lantern-lone-"));
+  fs.copyFileSync(path.join(repoRoot, "dist", "lantern.js"), path.join(lone, "lantern.js"));
+  const env = Object.assign({}, process.env);
+  delete env.PORT;
+  const lonePort = 18000 + (process.pid % 2000);
+  const child = spawn(process.execPath, ["lantern.js", String(lonePort)], {
+    cwd: lone, env, stdio: ["ignore", "pipe", "pipe"]
+  });
+  let said = "";
+  child.stdout.on("data", (d) => { said += d; });
+  child.stderr.on("data", (d) => { said += d; });
+
+  const ask = (p) => new Promise((resolve) => {
+    const r = http.request({ host: "127.0.0.1", port: lonePort, path: p }, (res) => {
+      let b = "";
+      res.on("data", (c) => { b += c; });
+      res.on("end", () => resolve({ status: res.statusCode, body: b }));
+    });
+    r.on("error", () => resolve(null));
+    r.end();
+  });
+
+  let loneHealth = null;
+  for (let i = 0; i < 40 && !loneHealth; i++) {
+    loneHealth = await ask("/api/health");
+    if (!loneHealth) await new Promise((r) => setTimeout(r, 100));
+  }
+  ok(loneHealth && loneHealth.status === 200, "the single file starts on its own (" + (said.split("\n")[0] || "no output") + ")");
+  const lonePage = loneHealth ? await ask("/") : null;
+  ok(lonePage && lonePage.status === 200 && /Lantern/.test(lonePage.body),
+     "the single file serves the client with no public/ folder beside it");
+  const loneIcon = loneHealth ? await ask("/icon.svg") : null;
+  ok(loneIcon && loneIcon.status === 200 && /<svg/.test(loneIcon.body),
+     "the single file serves the icon it carries");
+  child.kill();
+  fs.rmSync(lone, { recursive: true, force: true });
+
+  /* 15. The audit: every claim in the README checked against the repository. */
+  let auditOut = "";
+  let auditCode = 0;
+  try {
+    auditOut = execFileSync(process.execPath, ["tools/audit.mjs"], { cwd: repoRoot, encoding: "utf8" });
+  } catch (e) {
+    auditCode = e.status || 1;
+    auditOut = String(e.stdout || "");
+  }
+  eq(auditCode, 0, "the repository passes its own audit");
+  ok(/passed, 0 failed/.test(auditOut), "the audit reports no failures");
+
   await host.close();
   fs.rmSync(TMP, { recursive: true, force: true });
 

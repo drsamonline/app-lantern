@@ -22,6 +22,7 @@ const fs = require("fs");
 const path = require("path");
 const os = require("os");
 const crypto = require("crypto");
+const Search = require("./lib/search.js");
 
 const ROOT = __dirname;
 const PUBLIC = path.join(ROOT, "public");
@@ -33,6 +34,12 @@ const QUARANTINE = process.env.LANTERN_QUARANTINE
   ? path.resolve(process.env.LANTERN_QUARANTINE)
   : path.join(ROOT, ".quarantine");
 const MAX_BODY = 32 * 1024 * 1024;
+
+/* The single-file build (tools/build.mjs) puts the client assets in this global,
+   so one script is the whole app and can be copied to a Pi on its own. When it
+   is absent — the normal checkout — assets are read from public/. */
+const EMBEDDED =
+  (typeof globalThis.LANTERN_EMBEDDED === "object" && globalThis.LANTERN_EMBEDDED) || null;
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -76,103 +83,22 @@ function rmrf(target) {
 
 /* ------------------------------------------------------------------ index */
 
-const index = {
-  docs: [],           // { pack, path, title, text }
-  postings: new Map() // term -> Map(docIndex -> tf)
-};
+const index = Search.createIndex();
 
-const STOP = new Set(
-  ("a an and are as at be by for from has have in is it its of on or that the their " +
-    "there these this to was were will with not no but if then than so you your").split(" ")
-);
-
-function tokenise(s) {
-  const out = String(s || "")
-    .toLowerCase()
-    .match(/[\p{L}\p{N}]+/gu);
-  return out || [];
-}
-
-function normalisePhrase(s) {
-  return tokenise(s).join(" ");
-}
-
-function buildIndex(packRecords) {
-  index.docs = [];
-  index.postings = new Map();
-  for (const rec of packRecords) {
+function buildIndex(records) {
+  index.clear();
+  for (const rec of records) {
     for (const doc of rec.docs) {
-      const i = index.docs.length;
-      index.docs.push({
-        pack: rec.id,
-        path: doc.path,
-        title: doc.title,
-        text: doc.text
-      });
-      const seen = new Map();
-      for (const t of tokenise(doc.title + " " + doc.text)) {
-        if (STOP.has(t)) continue;
-        seen.set(t, (seen.get(t) || 0) + 1);
-      }
-      for (const [t, tf] of seen) {
-        if (!index.postings.has(t)) index.postings.set(t, new Map());
-        index.postings.get(t).set(i, tf);
-      }
+      index.add({ pack: rec.id, path: doc.path, title: doc.title, text: doc.text });
     }
   }
-  return index.docs.length;
+  return index.size();
 }
 
-/**
- * Ranked search. A document that contains the whole query as a phrase wins over
- * one that merely contains the words — that is what makes "a phrase that occurs
- * in exactly one document" come back first.
- */
+/* The ranking lives in lib/search.js, because the demo page runs the same file
+   in a browser and a demo that re-implements the search would drift from it. */
 function search(q, limit) {
-  const terms = tokenise(q).filter((t) => !STOP.has(t));
-  if (!terms.length) return [];
-  const phrase = normalisePhrase(q);
-  const N = Math.max(index.docs.length, 1);
-  const scores = new Map();
-
-  for (const t of terms) {
-    const posting = index.postings.get(t);
-    if (!posting) continue;
-    const idf = Math.log(1 + N / (1 + posting.size));
-    for (const [docIdx, tf] of posting) {
-      scores.set(docIdx, (scores.get(docIdx) || 0) + idf * (1 + Math.log(tf)));
-    }
-  }
-
-  const hits = [];
-  for (const [docIdx, score] of scores) {
-    const doc = index.docs[docIdx];
-    let s = score;
-    if (phrase && normalisePhrase(doc.text).indexOf(phrase) !== -1) s += 1000;
-    hits.push({
-      pack: doc.pack,
-      path: doc.path,
-      title: doc.title,
-      score: Math.round(s * 1000) / 1000,
-      snippet: snippetFor(doc.text, terms)
-    });
-  }
-  hits.sort((a, b) => b.score - a.score || a.title.localeCompare(b.title));
-  return hits.slice(0, Math.max(1, Math.min(limit || 20, 100)));
-}
-
-function snippetFor(text, terms) {
-  const flat = String(text).replace(/\s+/g, " ").trim();
-  const lower = flat.toLowerCase();
-  let at = -1;
-  for (const t of terms) {
-    const i = lower.indexOf(t);
-    if (i !== -1 && (at === -1 || i < at)) at = i;
-  }
-  if (at === -1) at = 0;
-  const start = Math.max(0, at - 60);
-  const cut = flat.slice(start, start + 180);
-  return (start > 0 ? "…" : "") + cut + (start + 180 < flat.length ? "…" : "");
+  return index.search(q, limit);
 }
 
 /* ------------------------------------------------------------------ packs */
@@ -405,6 +331,10 @@ function servePublic(req, res, relPath) {
   if (!file.startsWith(PUBLIC + path.sep) && file !== path.join(PUBLIC, "index.html")) {
     return json(res, 403, { error: "refused" });
   }
+  if (EMBEDDED && Object.prototype.hasOwnProperty.call(EMBEDDED, clean)) {
+    return send(res, 200, EMBEDDED[clean],
+      MIME[path.extname(clean).toLowerCase()] || "application/octet-stream");
+  }
   fs.readFile(file, (err, buf) => {
     if (err) return json(res, 404, { error: "not found" });
     send(res, 200, buf, MIME[path.extname(file).toLowerCase()] || "application/octet-stream");
@@ -428,7 +358,7 @@ function makeServer() {
           ok: true,
           app: "lantern",
           packs: CURRENT.records.length,
-          docs: index.docs.length,
+          docs: index.size(),
           quarantined: CURRENT.quarantined.length
         });
       }
@@ -443,7 +373,7 @@ function makeServer() {
             docs: r.docs.length
           })),
           quarantined: CURRENT.quarantined,
-          docs: index.docs.length
+          docs: index.size()
         });
       }
 
@@ -541,7 +471,7 @@ if (require.main === module) {
   const port = parseInt(process.env.PORT || process.argv[2] || "8080", 10);
   listen(port).then((h) => {
     const urls = h.addresses.length ? h.addresses : ["http://localhost:" + h.port + "/"];
-    console.log("Lantern is serving " + index.docs.length + " document(s) on port " + h.port);
+    console.log("Lantern is serving " + index.size() + " document(s) on port " + h.port);
     console.log("Open on any device on this Wi-Fi:");
     for (const u of urls) console.log("  " + u);
     console.log("No internet is used at any point.");

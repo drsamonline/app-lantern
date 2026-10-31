@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lantern — live demo</title>
+<meta name="description" content="The Lantern client and its real search code, running in your browser over a pre-built copy of the starter pack.">
+<link rel="canonical" href="https://drsamonline.github.io/app-lantern/demo/">
+<meta name="theme-color" content="#0b0e12">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<style>
+  :root{
+    --ink:#0b0e12; --panel:#151b23; --line:#242c37; --paper:#f2ede3;
+    --dim:#98a3b2; --amber:#f0b429; --amber-soft:#ffd166; --green:#5fbf8a;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ink);color:var(--paper);
+    font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;
+    background:radial-gradient(700px 380px at 50% -80px,rgba(240,180,41,.16),transparent 70%)}
+  a{color:var(--amber)}
+  .wrap{max-width:880px;margin:0 auto;padding:0 20px;position:relative}
+  header{padding:22px 0 0}
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--serif);font-size:20px}
+  .brand img{width:30px;height:30px;border-radius:8px}
+  .brand a{color:var(--dim);font-family:inherit;font-size:13.5px;margin-left:auto;text-decoration:none}
+  .brand a:hover{color:var(--paper)}
+  h1{font-family:var(--serif);font-weight:600;font-size:clamp(28px,4.4vw,40px);
+     letter-spacing:-.01em;margin:26px 0 6px}
+  .lede{color:var(--dim);margin:0 0 22px;max-width:62ch}
+  .note{background:rgba(240,180,41,.07);border:1px solid rgba(240,180,41,.28);
+        border-radius:12px;padding:12px 15px;font-size:13.5px;color:#e7d9b6;margin:0 0 24px}
+  .note b{color:var(--amber-soft)}
+  .searchrow{display:flex;gap:10px;flex-wrap:wrap}
+  input[type=search]{flex:1 1 260px;background:#0a0e13;border:1px solid var(--line);
+    border-radius:12px;padding:13px 15px;color:var(--paper);font:inherit;font-size:15.5px}
+  input[type=search]:focus{outline:2px solid rgba(240,180,41,.45);outline-offset:1px}
+  button{background:var(--amber);color:#1a1200;border:0;border-radius:12px;
+    padding:13px 18px;font-weight:650;font:inherit;font-size:15px;cursor:pointer}
+  button.ghost{background:transparent;color:var(--dim);border:1px solid var(--line)}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 0}
+  .chip{background:transparent;border:1px solid var(--line);color:var(--dim);
+    border-radius:999px;padding:6px 13px;font-size:13px;cursor:pointer;font-family:var(--mono)}
+  .chip:hover{color:var(--paper);border-color:#3a4553}
+  .meta{color:var(--dim);font-size:13px;margin:22px 0 8px;font-family:var(--mono)}
+  ul{list-style:none;margin:0;padding:0}
+  li.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:15px 17px;margin-bottom:10px;cursor:pointer;transition:border-color .15s}
+  li.result:hover{border-color:#3a4553}
+  .rt{display:flex;gap:10px;align-items:baseline;justify-content:space-between;flex-wrap:wrap}
+  .rt strong{font-family:var(--serif);font-size:17px;font-weight:600}
+  .pill{font:12px/1 var(--mono);color:var(--dim);border:1px solid var(--line);
+        border-radius:999px;padding:3px 9px}
+  .snip{color:#aeb7c4;font-size:14px;margin-top:6px}
+  .score{font:11.5px/1 var(--mono);color:#6f7b8a}
+  .reader{background:var(--panel);border:1px solid var(--line);border-radius:16px;
+    padding:22px;margin-top:18px}
+  .reader h2{font-family:var(--serif);font-size:22px;margin:0 0 4px}
+  .reader .src{font:12px/1 var(--mono);color:var(--dim);margin-bottom:14px}
+  .reader .body{color:#d7dce4}
+  .reader .body h1{font-size:22px;margin:0 0 10px}
+  .reader pre{background:#0a0d11;border:1px solid var(--line);border-radius:10px;
+    padding:12px;overflow:auto;font:12.5px/1.6 var(--mono);color:#cfd6e0}
+  footer{color:var(--dim);font-size:13px;padding:30px 0 60px}
+  .empty{color:var(--dim);font-style:italic}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="brand">
+    <img src="../icon.svg" alt="">
+    <span>Lantern</span>
+    <a href="../">← back to the lamp</a>
+  </header>
+
+  <h1>Search a library that has no internet.</h1>
+  <p class="lede">This is the Lantern client, and the <em>real</em>
+    <code>lib/search.js</code> the host runs, running in your browser over a pre-built copy of the
+    starter pack.</p>
+  <p class="note"><b>What this demo is not:</b> the host. A real Lantern serves this same page and this
+    same index from one device on your Wi-Fi, with the network cable out. Here the library is a JSON
+    file beside the page, so nothing is fetched and nothing is pretended.</p>
+
+  <form class="searchrow" id="form">
+    <input type="search" id="q" placeholder="Try: running water · checksum · pack" aria-label="Search the library" autocomplete="off">
+    <button type="submit">Search</button>
+    <button type="button" class="ghost" id="clear">Clear</button>
+  </form>
+  <div class="chips" id="chips"></div>
+
+  <div class="meta" id="meta">Loading the library…</div>
+  <ul id="hits"></ul>
+  <div id="reader"></div>
+
+  <footer>
+    <span id="foot"></span> · PolyForm Noncommercial 1.0.0 · © 2026 Dr Sohil Momin
+  </footer>
+</div>
+
+<script src="../lib/search.js"></script>
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var index = LanternSearch.createIndex();
+  var docs = [];
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function render(q) {
+    var hits = q ? index.search(q, 20) : [];
+    var box = $("hits");
+    if (!q) {
+      box.innerHTML = "";
+      $("meta").textContent = docs.length + " documents in the library";
+      return;
+    }
+    if (!hits.length) {
+      box.innerHTML = '<li class="result"><span class="empty">Nothing in the library matches “' +
+        esc(q) + '”.</span></li>';
+      $("meta").textContent = "0 of " + docs.length + " documents match";
+      return;
+    }
+    $("meta").textContent = hits.length + " of " + docs.length + " documents match “" + q + "”";
+    box.innerHTML = hits.map(function (h, i) {
+      return '<li class="result" data-at="' + i + '">' +
+        '<div class="rt"><strong>' + esc(h.title) + "</strong>" +
+        '<span class="pill">' + esc(h.pack) + "</span></div>" +
+        '<div class="snip">' + esc(h.snippet) + "</div>" +
+        '<div class="score" style="margin-top:6px">score ' + h.score + "</div></li>";
+    }).join("");
+    box._hits = hits;
+  }
+
+  function open(hit) {
+    var doc = docs.filter(function (d) { return d.path === hit.path && d.pack === hit.pack; })[0];
+    if (!doc) return;
+    $("reader").innerHTML = '<div class="reader"><h2>' + esc(doc.title) + "</h2>" +
+      '<div class="src">' + esc(doc.pack) + " / " + esc(doc.path) + "</div>" +
+      '<div class="body">' + doc.text + "</div></div>";
+    $("reader").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  $("hits").addEventListener("click", function (ev) {
+    var li = ev.target.closest("li.result");
+    if (!li) return;
+    var hits = $("hits")._hits || [];
+    var hit = hits[+li.getAttribute("data-at")];
+    if (hit) open(hit);
+  });
+
+  $("form").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var q = $("q").value.trim();
+    history.replaceState(null, "", q ? "?q=" + encodeURIComponent(q) : location.pathname);
+    render(q);
+  });
+
+  $("clear").addEventListener("click", function () {
+    $("q").value = "";
+    history.replaceState(null, "", location.pathname);
+    render("");
+    $("reader").innerHTML = "";
+  });
+
+  fetch("library.json")
+    .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+    .then(function (lib) {
+      docs = lib.docs || [];
+      docs.forEach(function (d) { index.add(d); });
+      $("foot").textContent = "Starter pack · " + docs.length + " documents";
+      $("chips").innerHTML = (lib.suggestions || []).map(function (s) {
+        return '<button class="chip" data-q="' + esc(s) + '">' + esc(s) + "</button>";
+      }).join("");
+      $("chips").addEventListener("click", function (ev) {
+        var b = ev.target.closest(".chip");
+        if (!b) return;
+        $("q").value = b.getAttribute("data-q");
+        $("form").dispatchEvent(new Event("submit"));
+      });
+      var start = new URLSearchParams(location.search).get("q") || "";
+      if (start) { $("q").value = start; render(start); } else { render(""); }
+    })
+    .catch(function (e) {
+      $("meta").textContent = "The demo library could not be read: " + e.message;
+    });
+})();
+</script>
+</body>
+</html>

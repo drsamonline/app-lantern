@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lantern — a whole library, served over your own Wi-Fi</title>
+<meta name="description" content="Lantern turns one device into a local content server. Everyone on the same Wi-Fi opens a browser and reads and searches a bundled library — no internet at any point. One Node file, no dependencies.">
+<link rel="canonical" href="https://drsamonline.github.io/app-lantern/">
+<meta name="theme-color" content="#0D1014">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-512.png">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Lantern — a whole library, served over your own Wi-Fi">
+<meta property="og:description" content="One device becomes a local library. Plain browsers on the same Wi-Fi read and search it. No internet at any point.">
+<meta property="og:url" content="https://drsamonline.github.io/app-lantern/">
+<meta property="og:image" content="https://drsamonline.github.io/app-lantern/icon-512.png">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+  :root{
+    --ink:#0b0e12; --room:#12161c; --panel:#171d25; --line:#242c37;
+    --paper:#f2ede3; --dim:#9aa5b4; --amber:#f0b429; --amber-soft:#ffd166;
+    --ember:#e2792b; --green:#5fbf8a;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--ink);color:var(--paper);
+    font:17px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;overflow-x:hidden;
+  }
+  a{color:var(--amber);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+
+  /* the room: one warm pool of light, and everything else in shadow */
+  .room{position:relative;overflow:hidden}
+  .room::before{
+    content:"";position:absolute;left:50%;top:-160px;width:1100px;height:900px;
+    transform:translateX(-50%);pointer-events:none;
+    background:radial-gradient(circle at 50% 40%,rgba(240,180,41,.20),rgba(240,180,41,.06) 42%,transparent 68%);
+  }
+  header{position:relative;padding:34px 0 0}
+  .nav{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:11px;font-family:var(--serif);font-size:21px;letter-spacing:.3px}
+  .brand img{width:34px;height:34px;border-radius:9px}
+  .nav .spacer{flex:1}
+  .nav a.plain{color:var(--dim);font-size:14.5px}
+  .nav a.plain:hover{color:var(--paper)}
+
+  .hero{position:relative;display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:center;padding:64px 0 40px}
+  .kicker{font:600 12px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--amber)}
+  h1{
+    font-family:var(--serif);font-weight:600;font-size:clamp(38px,5.4vw,62px);
+    line-height:1.04;letter-spacing:-.015em;margin:18px 0 0;
+  }
+  h1 em{font-style:italic;color:var(--amber-soft)}
+  .lede{color:#c6ccd6;font-size:18.5px;max-width:33ch;margin:20px 0 0}
+  .cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:30px}
+  .btn{
+    display:inline-flex;align-items:center;gap:9px;padding:13px 20px;border-radius:12px;
+    font-weight:650;font-size:15.5px;border:1px solid transparent;transition:transform .15s ease, background .15s ease;
+  }
+  .btn:hover{text-decoration:none;transform:translateY(-1px)}
+  .btn.primary{background:var(--amber);color:#1a1200}
+  .btn.primary:hover{background:var(--amber-soft)}
+  .btn.ghost{border-color:var(--line);color:var(--paper);background:rgba(255,255,255,.02)}
+  .btn.ghost:hover{background:rgba(255,255,255,.06)}
+
+  .lamp{position:relative;display:flex;justify-content:center}
+  .lamp img{width:min(320px,80%);height:auto;border-radius:26px;
+    box-shadow:0 30px 90px -30px rgba(240,180,41,.55),0 0 0 1px rgba(255,255,255,.04)}
+  .lamp::after{
+    content:"";position:absolute;inset:auto 0 -40px 0;height:120px;
+    background:radial-gradient(ellipse at 50% 0%,rgba(240,180,41,.16),transparent 70%);
+    filter:blur(6px);
+  }
+  .flicker{animation:flicker 6.5s infinite ease-in-out}
+  @keyframes flicker{0%,100%{opacity:1}47%{opacity:.94}52%{opacity:1}73%{opacity:.97}}
+
+  .strip{border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+    background:rgba(255,255,255,.015);margin-top:26px}
+  .strip ul{display:flex;flex-wrap:wrap;gap:8px 34px;justify-content:center;
+    list-style:none;margin:0;padding:16px 0;font:13.5px/1.5 var(--mono);color:var(--dim)}
+  .strip b{color:var(--paper);font-weight:600}
+
+  section{padding:74px 0}
+  h2{font-family:var(--serif);font-weight:600;font-size:clamp(26px,3.3vw,36px);
+     letter-spacing:-.01em;margin:0 0 8px}
+  .sub{color:var(--dim);margin:0 0 34px;max-width:60ch}
+  .three{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px}
+  .card h3{margin:0 0 8px;font-size:16.5px;font-family:var(--serif);font-weight:600}
+  .card p{margin:0;color:#b9c1cc;font-size:15px}
+  .num{font:600 12px/1 var(--mono);color:var(--amber);letter-spacing:.16em;display:block;margin-bottom:12px}
+
+  /* the demo invitation */
+  .demo{background:
+      radial-gradient(600px 240px at 20% 0%,rgba(240,180,41,.13),transparent 70%),
+      var(--panel);
+    border:1px solid var(--line);border-radius:20px;padding:32px}
+  .demo form{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+  .demo input[type=search]{
+    flex:1 1 280px;background:#0b0f14;border:1px solid var(--line);border-radius:12px;
+    padding:13px 15px;color:var(--paper);font:inherit;font-size:15.5px}
+  .demo input[type=search]:focus{outline:2px solid rgba(240,180,41,.45);outline-offset:1px}
+  .hint{color:var(--dim);font-size:13.5px;margin-top:12px}
+  .hint code{font-family:var(--mono);font-size:12.5px;color:var(--amber-soft)}
+
+  table{width:100%;border-collapse:collapse;font-size:15px}
+  th,td{text-align:left;padding:13px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font:600 12px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+  td:first-child{color:var(--paper);width:38%}
+  td{color:#b9c1cc}
+
+  pre{background:#0a0d11;border:1px solid var(--line);border-radius:14px;padding:18px;
+      overflow:auto;font:13.5px/1.7 var(--mono);color:#cfd6e0}
+  .ok{color:var(--green)}
+
+  footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--dim);font-size:14px}
+  footer .row{display:flex;gap:22px;flex-wrap:wrap;justify-content:space-between;align-items:center}
+
+  @media (max-width:820px){
+    .hero{grid-template-columns:1fr;padding:44px 0 20px}
+    .lamp{order:-1}
+    .lamp img{width:min(220px,60%)}
+    .three{grid-template-columns:1fr}
+    section{padding:54px 0}
+    td:first-child{width:auto}
+  }
+  @media (prefers-reduced-motion:reduce){.flicker{animation:none}}
+</style>
+</head>
+<body>
+
+<div class="room">
+  <header>
+    <div class="wrap nav">
+      <span class="brand"><img src="icon.svg" alt=""> Lantern</span>
+      <span class="spacer"></span>
+      <a class="plain" href="#how">How it works</a>
+      <a class="plain" href="#limits">What it refuses</a>
+      <a class="plain" href="https://github.com/drsamonline/app-lantern">Source</a>
+    </div>
+  </header>
+
+  <div class="wrap hero">
+    <div>
+      <span class="kicker">Internet-in-a-Box, as an app</span>
+      <h1>A whole library, lit by <em>one small lamp</em>.</h1>
+      <p class="lede">One device on your Wi-Fi becomes a content server. Everyone else opens a
+        browser and reads — and searches — a library that never asks the internet for anything.</p>
+      <div class="cta">
+        <a class="btn primary" href="demo/">Open the live demo →</a>
+        <a class="btn ghost" href="https://github.com/drsamonline/app-lantern">Read the source</a>
+      </div>
+    </div>
+    <div class="lamp"><img class="flicker" src="icon.svg" alt="The Lantern mark: a lamp with a flame in it"></div>
+  </div>
+
+  <div class="strip">
+    <div class="wrap">
+      <ul>
+        <li><b>0</b> runtime dependencies</li>
+        <li><b>1</b> Node file to run</li>
+        <li><b>60</b> assertions, over real HTTP</li>
+        <li><b>no</b> internet at any point</li>
+        <li><b>no</b> account, no telemetry</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<section id="how">
+  <div class="wrap">
+    <h2>The lamp, the room, the reader</h2>
+    <p class="sub">Three parts, and only one of them is clever.</p>
+    <div class="three">
+      <div class="card">
+        <span class="num">01 — the host</span>
+        <h3>One file, no dependencies</h3>
+        <p>A Node HTTP server that serves the page, the library and the search index. Copy it to a
+           laptop, a Raspberry Pi, or a phone that runs Node. Nothing to install.</p>
+      </div>
+      <div class="card">
+        <span class="num">02 — the packs</span>
+        <h3>Content you can trust</h3>
+        <p>Every imported file is hashed and measured. On every load those hashes are checked again,
+           and a pack that no longer matches is quarantined instead of served with pages missing.</p>
+      </div>
+      <div class="card">
+        <span class="num">03 — the reader</span>
+        <h3>A plain browser</h3>
+        <p>No app to install, no account to make. A phone joins the Wi-Fi, opens the address the host
+           prints, and searches. That is the whole client.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="demo">
+      <h2 style="font-size:clamp(24px,3vw,30px)">Try the search, right here</h2>
+      <p class="sub" style="margin-bottom:0">The demo below runs the <strong>same</strong>
+        <code style="font-family:var(--mono);font-size:13px">lib/search.js</code> the host runs — in your
+        browser, over a pre-built copy of the starter pack. Nothing is fetched from anywhere.</p>
+      <form action="demo/" method="get">
+        <input type="search" name="q" placeholder="running water · phrase · pack" aria-label="Search the demo library">
+        <button class="btn primary" type="submit">Search</button>
+      </form>
+      <p class="hint">A phrase that occurs in exactly one document ranks first — that is the
+        <code>phrase</code> bonus, not luck.</p>
+    </div>
+  </div>
+</section>
+
+<section id="limits" style="padding-top:0">
+  <div class="wrap">
+    <h2>What it does when things go wrong</h2>
+    <p class="sub">Each row is asserted in the test suite, not promised in prose.</p>
+    <table>
+      <thead><tr><th>Situation</th><th>What Lantern does</th></tr></thead>
+      <tbody>
+        <tr><td>A path tries to leave a pack</td><td>Refused at import and refused again at request, with <code>403</code>.</td></tr>
+        <tr><td>The disk is full or read-only</td><td>The pack is not added, the files that did not land are named, and nothing half-written is left behind.</td></tr>
+        <tr><td>A pack no longer matches its manifest</td><td>Moved to <code>.quarantine/</code>, reported in the Packs card, and neither served nor searchable.</td></tr>
+        <tr><td>No peers, no internet</td><td>Nothing changes. The library opens on the host and says how many documents it holds.</td></tr>
+        <tr><td>A bundle that is not JSON</td><td>Refused with the reason shown, and the library keeps serving.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <h2>Run it in ten seconds</h2>
+    <p class="sub">It prints the address a phone should open. No build step, no install.</p>
+    <pre><span class="ok">$</span> node server.js
+Lantern is serving 3 document(s) on port 8080
+Open on any device on this Wi-Fi:
+  http://192.168.1.24:8080/
+No internet is used at any point.</pre>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap row">
+    <span>Lantern · PolyForm Noncommercial 1.0.0 · © 2026 Dr Sohil Momin</span>
+    <span>
+      <a href="demo/">Demo</a> ·
+      <a href="https://github.com/drsamonline/app-lantern">GitHub</a> ·
+      <a href="https://github.com/drsamonline/app-lantern/releases/latest">Releases</a> ·
+      <a href="https://drsamonline.github.io/">All projects</a>
+    </span>
+  </div>
+</footer>
+
+</body>
+</html>

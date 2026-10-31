@@ -1,10 +1,12 @@
 {
   "name": "app-lantern",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
-  "description": "Lantern — serve a whole library of offline content over the LAN. Zero dependencies.",
+  "description": "Lantern \u2014 serve a whole library of offline content over the LAN. Zero dependencies.",
   "license": "SEE LICENSE IN LICENSE",
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "start": "node server.js",
     "test": "node test-node.js"
