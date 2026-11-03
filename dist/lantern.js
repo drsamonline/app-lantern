@@ -447,14 +447,14 @@ function reload() {
   return CURRENT;
 }
 
-function send(res, code, body, type) {
+function send(res, code, body, type, extra) {
   const buf = Buffer.isBuffer(body) ? body : Buffer.from(String(body), "utf8");
-  res.writeHead(code, {
+  res.writeHead(code, Object.assign({
     "content-type": type || "application/json; charset=utf-8",
     "content-length": buf.length,
     "cache-control": "no-store",
     "x-content-type-options": "nosniff"
-  });
+  }, extra || {}));
   res.end(buf);
 }
 
@@ -498,6 +498,64 @@ function servePublic(req, res, relPath) {
   });
 }
 
+/* ---------------------------------------------------------------- settings */
+
+/* Two settings, both per library, both persisted beside the server:
+     access   open | approved     who may read at all
+     download read-only | allow   whether a reader may take the file
+   Nothing here is written until something actually changes, so a plain run
+   leaves no file behind. */
+const SETTINGS_FILE = process.env.LANTERN_SETTINGS
+  ? path.resolve(process.env.LANTERN_SETTINGS)
+  : path.join(ROOT, "lantern.json");
+const DEFAULTS = { access: "open", download: "read-only", code: null };
+const SETTINGS = (function load() {
+  try {
+    const j = JSON.parse(fs.readFileSync(SETTINGS_FILE, "utf8"));
+    return Object.assign({}, DEFAULTS, j);
+  } catch (e) {
+    return Object.assign({}, DEFAULTS);
+  }
+})();
+function saveSettings() {
+  try {
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(SETTINGS, null, 2) + "\n");
+  } catch (e) { /* a read-only disk must not stop the library serving */ }
+}
+function joinCode() {
+  if (!SETTINGS.code) {
+    SETTINGS.code = String(crypto.randomInt(100000, 999999));
+    saveSettings();
+  }
+  return SETTINGS.code;
+}
+
+/* A device is a browser that asked to be let in. Approved ones get a token and
+   keep it; pending ones wait for the host to answer. */
+const DEVICES = { approved: {}, pending: {} };
+function isLocal(req) {
+  const a = req.socket.remoteAddress || "";
+  return a === "127.0.0.1" || a === "::1" || a === "::ffff:127.0.0.1" || a === "::ffff:7f00:1";
+}
+function tokenOf(req) {
+  const h = req.headers["x-lantern-device"];
+  if (h) return String(h);
+  const c = req.headers.cookie || "";
+  const m = c.match(/(?:^|;\s*)lantern=([^;]+)/);
+  return m ? decodeURIComponent(m[1]) : "";
+}
+function gate(res, req) {
+  if (SETTINGS.access !== "approved" || isLocal(req)) return true;
+  const t = tokenOf(req);
+  if (t && DEVICES.approved[t]) return true;
+  json(res, 401, {
+    error: "this library is not open to every device",
+    join: true,
+    hint: "enter the six-digit code shown on the host"
+  });
+  return false;
+}
+
 function makeServer() {
   return http.createServer(async (req, res) => {
     let url;
@@ -509,6 +567,103 @@ function makeServer() {
     const route = decodeURIComponent(url.pathname);
 
     try {
+      if (route === "/api/settings") {
+        if (req.method === "GET") {
+          return json(res, 200, {
+            access: SETTINGS.access,
+            download: SETTINGS.download,
+            code: SETTINGS.access === "approved" ? joinCode() : null,
+            local: isLocal(req),
+            pending: isLocal(req) ? Object.keys(DEVICES.pending).length : undefined
+          });
+        }
+        if (req.method === "POST") {
+          if (!isLocal(req)) return json(res, 403, { error: "only the host can change this" });
+          let body;
+          try {
+            body = JSON.parse(await readBody(req));
+          } catch (e) {
+            return json(res, 400, { error: "settings is not JSON: " + e.message });
+          }
+          if (body.access !== undefined) {
+            if (body.access !== "open" && body.access !== "approved") {
+              return json(res, 400, { error: "access is open or approved" });
+            }
+            SETTINGS.access = body.access;
+            if (body.access === "approved") joinCode();
+          }
+          if (body.download !== undefined) {
+            if (body.download !== "read-only" && body.download !== "allow") {
+              return json(res, 400, { error: "download is read-only or allow" });
+            }
+            SETTINGS.download = body.download;
+          }
+          saveSettings();
+          return json(res, 200, { access: SETTINGS.access, download: SETTINGS.download,
+            code: SETTINGS.access === "approved" ? joinCode() : null });
+        }
+        return json(res, 405, { error: "method not allowed" });
+      }
+
+      if (route === "/api/join") {
+        if (SETTINGS.access !== "approved" || isLocal(req)) {
+          return json(res, 200, { ok: true, open: true });
+        }
+        if (req.method === "POST") {
+          let body;
+          try {
+            body = JSON.parse(await readBody(req));
+          } catch (e) {
+            return json(res, 400, { error: "join is not JSON: " + e.message });
+          }
+          if (String(body.code || "").replace(/\D/g, "") !== joinCode()) {
+            return json(res, 403, { error: "that code is not this library's" });
+          }
+          const id = crypto.randomBytes(16).toString("hex");
+          DEVICES.pending[id] = {
+            id,
+            name: String(body.name || "a device").slice(0, 60),
+            asked: new Date().toISOString()
+          };
+          return json(res, 202, { ok: true, pending: id });
+        }
+        if (req.method === "GET") {
+          const id = url.searchParams.get("id") || "";
+          if (DEVICES.approved[id]) return json(res, 200, { state: "approved", token: id });
+          if (DEVICES.pending[id]) return json(res, 200, { state: "pending" });
+          return json(res, 200, { state: "unknown" });
+        }
+        return json(res, 405, { error: "method not allowed" });
+      }
+
+      if (route === "/api/pending") {
+        if (!isLocal(req)) return json(res, 403, { error: "only the host sees the list" });
+        if (req.method !== "GET") return json(res, 405, { error: "method not allowed" });
+        return json(res, 200, {
+          pending: Object.values(DEVICES.pending),
+          approved: Object.values(DEVICES.approved)
+        });
+      }
+
+      if (route.startsWith("/api/pending/") && req.method === "POST") {
+        if (!isLocal(req)) return json(res, 403, { error: "only the host can let someone in" });
+        const id = route.slice("/api/pending/".length);
+        let body;
+        try {
+          body = JSON.parse(await readBody(req));
+        } catch (e) {
+          return json(res, 400, { error: "not JSON: " + e.message });
+        }
+        const wait = DEVICES.pending[id];
+        if (!wait) return json(res, 404, { error: "no such request" });
+        delete DEVICES.pending[id];
+        if (body.let === true) {
+          DEVICES.approved[id] = { id, name: wait.name, since: new Date().toISOString() };
+          return json(res, 200, { ok: true, state: "approved" });
+        }
+        return json(res, 200, { ok: true, state: "refused" });
+      }
+
       if (route === "/api/health") {
         reload(); // reflect what is actually on disk, not a stale snapshot
         return json(res, 200, {
@@ -520,6 +675,11 @@ function makeServer() {
         });
       }
 
+      if ((route === "/api/packs" || route.startsWith("/api/packs/") ||
+           route === "/api/search" || route.startsWith("/p/"))) {
+        if (!gate(res, req)) return;
+      }
+
       if (route === "/api/packs" && req.method === "GET") {
         reload(); // the pack manager reports the disk, not a stale snapshot
         return json(res, 200, {
@@ -527,7 +687,8 @@ function makeServer() {
             id: r.id,
             title: r.title,
             bytes: r.bytes,
-            docs: r.docs.length
+            docs: r.docs.length,
+            paths: r.docs.map((d) => d.path)
           })),
           quarantined: CURRENT.quarantined,
           docs: index.size()
@@ -570,7 +731,20 @@ function makeServer() {
         if (!rec) return json(res, 404, { error: "no such pack: " + packId });
         const doc = rec.docs.find((d) => d.path === rel);
         if (!doc) return json(res, 404, { error: "no such document: " + rel });
-        return send(res, 200, doc.text, MIME[path.extname(rel).toLowerCase()] || "text/html; charset=utf-8");
+        const type = MIME[path.extname(rel).toLowerCase()] || "text/html; charset=utf-8";
+        if (url.searchParams.get("download") !== null) {
+          if (SETTINGS.download !== "allow") {
+            return json(res, 403, {
+              error: "this library is read-only",
+              hint: "the host can allow downloads in its settings"
+            });
+          }
+          return send(res, 200, doc.text, type, {
+            "content-disposition": 'attachment; filename="' +
+              path.basename(rel).replace(/[^\w.\- ]/g, "_") + '"'
+          });
+        }
+        return send(res, 200, doc.text, type);
       }
 
       if (req.method === "GET" || req.method === "HEAD") return servePublic(req, res, route);
