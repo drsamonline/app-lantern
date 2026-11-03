@@ -1,0 +1,22 @@
+{
+  "packageId": "io.github.drsamonline.lantern",
+  "host": "drsamonline.github.io",
+  "name": "Lantern",
+  "launcherName": "Lantern",
+  "display": "standalone",
+  "themeColor": "#0b0e12",
+  "themeColorDark": "#0b0e12",
+  "navigationColor": "#0b0e12",
+  "backgroundColor": "#0b0e12",
+  "startUrl": "/app-lantern/play/",
+  "iconUrl": "https://drsamonline.github.io/app-lantern/play/icon-512.png",
+  "maskableIconUrl": "https://drsamonline.github.io/app-lantern/play/icon-512.png",
+  "webManifestUrl": "https://drsamonline.github.io/app-lantern/play/manifest.webmanifest",
+  "appVersionName": "1.1.0",
+  "appVersion": 1100,
+  "enableNotifications": false,
+  "generatorApp": "bubblewrap-cli",
+  "features": {},
+  "shortcuts": [],
+  "signingKey": { "path": "./android.keystore", "alias": "lantern" }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "Lantern — read the library",
+  "short_name": "Lantern",
+  "description": "Read a library shared over your own Wi-Fi. The books open inside the app, and nothing leaves the room.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b0e12",
+  "theme_color": "#0b0e12",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

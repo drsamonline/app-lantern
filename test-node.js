@@ -399,6 +399,23 @@ async function main() {
 
   await post("/api/settings", { access: "open", download: "read-only" });
 
+  /* 14c. The desktop build starts the same server from the same seam, so a
+     window and a terminal run the identical library. */
+  const boot = require("./desktop/boot.js");
+  const desk = await boot.start({ port: 0 });
+  ok(desk.port > 0, "the desktop seam takes a real port");
+  ok(/^http:\/\/127\.0\.0\.1:\d+\/$/.test(desk.url), "and returns a url a window can load");
+  const deskHealth = await new Promise((resolve, reject) => {
+    http.get(desk.url + "api/health", (res) => {
+      const chunks = [];
+      res.on("data", (c) => chunks.push(c));
+      res.on("end", () => resolve({ status: res.statusCode, body: Buffer.concat(chunks).toString() }));
+    }).on("error", reject);
+  });
+  eq(deskHealth.status, 200, "the window's server answers health");
+  ok(/"app":"lantern"/.test(deskHealth.body.replace(/\s+/g, "")), "and says it is lantern");
+  await desk.close();
+
   /* 15. The audit: every claim in the README checked against the repository. */
   let auditOut = "";
   let auditCode = 0;

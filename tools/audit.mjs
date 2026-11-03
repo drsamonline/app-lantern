@@ -118,6 +118,28 @@ ok("no viewer is fetched from the network",
 ok("the sample PDF is a real PDF", exists("docs/play/sample/organon-excerpt.pdf") &&
    /^%PDF-/.test(read("docs/play/sample/organon-excerpt.pdf").slice(0, 5)));
 
+/* 5d. The desktop build: same app, in a window, and Windows and Linux only. */
+const pkg = JSON.parse(read("package.json"));
+ok("the desktop shell exists", exists("desktop/main.js") && exists("desktop/boot.js"));
+ok("package.json points at the shell", pkg.main === "desktop/main.js");
+ok("no runtime dependencies were added",
+   !pkg.dependencies || Object.keys(pkg.dependencies).length === 0);
+ok("the build targets Windows and Linux", !!pkg.build && !!pkg.build.win && !!pkg.build.linux);
+ok("and never Apple", !!pkg.build && !pkg.build.mac &&
+   !/macos/i.test(read(".github/workflows/desktop.yml")));
+ok("the window turns devtools off", /devtools:\s*false/.test(read("desktop/main.js")));
+ok("the window has no application menu", /setApplicationMenu\(null\)/.test(read("desktop/main.js")));
+ok("a link leaves the library window", /setWindowOpenHandler/.test(read("desktop/main.js")));
+
+/* 5e. The app is installable, and the Android build says what it is. */
+const wm = JSON.parse(read("docs/play/manifest.webmanifest"));
+ok("the web manifest is installable",
+   !!wm.name && wm.display === "standalone" &&
+   wm.icons.some((i) => i.sizes === "192x192") && wm.icons.some((i) => i.sizes === "512x512"));
+ok("the app links its manifest", /rel="manifest"/.test(html["docs/play/index.html"] || ""));
+ok("the android config exists", exists("android/twa-manifest.json"));
+ok("no placeholder assetlinks is shipped", !exists("docs/.well-known/assetlinks.json"));
+
 /* 6. The builds exist, and the single file is one file. */
 ok("dist/lantern.js exists (run tools/build.mjs)", exists("dist/lantern.js"));
 if (exists("dist/lantern.js")) {
