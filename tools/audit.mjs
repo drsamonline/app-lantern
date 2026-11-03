@@ -24,7 +24,7 @@ const ok = (name, cond, detail) => {
   fails.push(name + (detail ? " — " + detail : ""));
 };
 
-const pages = ["public/index.html", "docs/index.html", "docs/demo/index.html"];
+const pages = ["public/index.html", "docs/index.html", "docs/play/index.html"];
 const html = Object.fromEntries(pages.map((p) => [p, read(p)]));
 
 /* 1. Offline means offline: no page may load anything from another origin. */
@@ -69,28 +69,35 @@ for (const d of pack.docs) {
   ok("demo doc " + d.path + " matches the pack", !!got && got.text === d.content && got.title === d.title);
 }
 
-/* 4b. The demo carries the library inside itself: no fetch, nothing to fail. */
-const demoHtml = html["docs/demo/index.html"];
-const inlined = demoHtml.match(/<script id="library" type="application\/json">([\s\S]*?)<\/script>/);
-ok("the demo page carries its library inline", !!inlined);
-if (inlined) {
-  let carried = null;
-  try { carried = JSON.parse(inlined[1]); } catch (e) { /* reported below */ }
-  ok("the inlined library parses", !!carried);
-  if (carried) {
-    ok("the inlined library matches the pack",
-       carried.docs.length === pack.docs.length &&
-       pack.docs.every((d) => (carried.docs.find((x) => x.path === d.path) || {}).text === d.content),
-       "run node tools/build.mjs");
-  }
+/* 4b. The app is one self-contained page with its sample library inside it.
+   The old demo page is now a forwarder to the app, so the checks moved here. */
+const appHtml = html["docs/play/index.html"];
+ok("the app exists at docs/play/index.html", !!appHtml);
+if (appHtml) {
+  ok("the app carries its sample library inline", /var SAMPLE = \{/.test(appHtml));
+  ok("the app fetches nothing", !/\bfetch\s*\(/.test(appHtml));
+  ok("the app has the two doors", /door-share/.test(appHtml) && /door-read/.test(appHtml));
+  ok("the app routes by hash", /hashchange/.test(appHtml) && /#read\//.test(appHtml));
+  ok("the app opens a real folder", /showDirectoryPicker/.test(appHtml));
+  ok("the demo page forwards to the app", /url=\.\.\/play\//.test(read("docs/demo/index.html")));
+  const srcs = (appHtml.match(/src="[^"]+"/g) || []).filter((m) => !/src="\.\.\/icon\.svg"/.test(m));
+  const remote = /<script[^>]+src="https?:/.test(appHtml) ||
+                 /<link[^>]+rel="stylesheet"[^>]+href="https?:/.test(appHtml) ||
+                 /url\(\s*['"]?https?:/.test(appHtml);
+  ok("the app loads nothing but its own icon", srcs.length === 0 && !remote,
+     srcs.join(", ") || (remote ? "a remote stylesheet or script" : ""));
 }
-ok("the demo fetches nothing", !/\bfetch\s*\(/.test(demoHtml));
 
-/* 5. The demo runs the same search code as the host — that is the whole claim. */
-ok("the demo page loads lib/search.js", /src="\.\.\/\.\.\/lib\/search\.js"/.test(html["docs/demo/index.html"]));
+/* 5. The server still owns the search, and the app does not pretend to. */
 ok("the server requires lib/search.js", /require\("\.\/lib\/search\.js"\)/.test(read("server.js")));
-ok("the demo does not re-implement search",
-   !/function\s+tokenise|new Map\(\)/.test(html["docs/demo/index.html"]));
+
+/* 5b. The two modes exist, and both are defaulted safe. */
+const srv = read("server.js");
+ok("the server has an access mode", /access:\s*"open"/.test(srv) && /access === "approved"/.test(srv));
+ok("the server has a download mode", /download:\s*"read-only"/.test(srv) &&
+   /searchParams\.get\("download"\)/.test(srv));
+ok("read-only refuses a download", /this library is read-only/.test(srv));
+ok("the join flow exists", /"\/api\/join"/.test(srv) && /"\/api\/pending"/.test(srv));
 
 /* 6. The builds exist, and the single file is one file. */
 ok("dist/lantern.js exists (run tools/build.mjs)", exists("dist/lantern.js"));
