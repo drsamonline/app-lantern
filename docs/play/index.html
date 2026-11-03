@@ -98,6 +98,11 @@
   .page pre{white-space:pre-wrap;font:14.5px/1.75 var(--mono);color:#d9d3c6;margin:0}
   .page iframe{width:100%;height:60vh;border:0;border-radius:10px;background:#fff}
   .page img{max-width:100%;height:auto;border-radius:10px}
+  .page canvas{max-width:100%;height:auto;display:block;margin:0 auto;border-radius:8px;background:#fff}
+  .page .ep{width:100%;height:56vh;border-radius:10px;overflow:hidden;background:#fff}
+  .page .ep iframe{border:0;width:100%;height:100%}
+  .bar2{display:flex;align-items:center;gap:10px;justify-content:center;margin-top:14px;
+    color:var(--dim);font:12.5px var(--mono)}
   footer{border-top:1px solid var(--line);padding:20px 0;color:var(--dim);font-size:12.5px}
   footer a{color:var(--dim)}
   @media (max-width:760px){
@@ -348,6 +353,10 @@
         body: "Two modes, per library.\n\nAnyone on this Wi-Fi - the library answers every device on the network. Right for a classroom.\n\nOnly people I let in - a six-digit code and a QR; a device waits until you approve it once, then it is remembered." },
       { path: "read-only.md", title: "Read only, honestly", type: "md",
         body: "Read only means there is no download button anywhere, and the file never lands on the reader's device.\n\nIt does not mean a book cannot be copied. Anyone can photograph a screen, and a browser can always read what it renders.\n\nIf a book must not be copied, it does not belong on a shared library. That is the only real control." },
+      { path: "organon-excerpt.pdf", title: "Organon — § 1 to 3 (a real PDF)", type: "pdf",
+        url: "sample/organon-excerpt.pdf" },
+      { path: "lantern-book.epub", title: "The Lantern Book (a real EPUB)", type: "epub",
+        url: "sample/lantern-book.epub" },
       { path: "supported-files.md", title: "What opens", type: "md",
         body: "HTML, Markdown and plain text read directly.\n\nPDF reads in the built-in viewer, page by page, and is searchable when it has a text layer.\n\nEPUB reads chapter by chapter.\n\nImages open as a page you can zoom. A scan with no text layer is searchable by file name only." }
     ]
@@ -356,7 +365,8 @@
   function useSample(){
     state.name = SAMPLE.name;
     state.books = SAMPLE.books.map(function(b){
-      return { path: b.path, title: b.title, type: b.type, body: b.body, size: b.body.length };
+      return { path: b.path, title: b.title, type: b.type, body: b.body, url: b.url,
+                   size: (b.body || b.url || "").length };
     });
     renderFolders();
     setMode("sample library", true);
@@ -414,7 +424,7 @@
   }
 
   function renderFolders(){
-    var readable = state.books.filter(function(b){ return b.body != null || b.readable; }).length;
+    var readable = state.books.filter(function(b){ return b.body != null || b.url || b.readable; }).length;
     var nameOnly = state.books.length - readable;
     $("folders").innerHTML =
       '<div class="row"><div class="grow"><div class="path"></div>' +
@@ -447,7 +457,7 @@
       btn.innerHTML = '<div class="spine"></div><p class="t"></p><p class="m"></p>';
       btn.querySelector(".spine").textContent = (b.type || "file").toUpperCase().slice(0, 4);
       btn.querySelector(".t").textContent = b.title || b.path;
-      btn.querySelector(".m").textContent = (b.body != null || b.readable) ? "readable" : "name only";
+      btn.querySelector(".m").textContent = (b.body != null || b.url || b.readable) ? "readable" : "name only";
       btn.onclick = function(){ openBook(b); };
       wrap.appendChild(btn);
     });
@@ -463,6 +473,16 @@
 
     if (b.body != null){                       // the sample library
       return paint(b.type, b.body);
+    }
+    if (b.url){                                // a real file with a real viewer
+      var job = b.type === "pdf" ? pdfViewer(b.url) : epubViewer(b.url);
+      return job.catch(function(err){
+        page.innerHTML = "";
+        var p = document.createElement("p");
+        p.style.color = "var(--red)";
+        p.textContent = "Could not open this book: " + (err && err.message ? err.message : err);
+        page.appendChild(p);
+      });
     }
     if (!b.handle){
       return paint("", "This file is listed but has no content to read here.");
@@ -491,8 +511,9 @@
         page.innerHTML = "";
         var p = document.createElement("p");
         p.style.color = "var(--dim)";
-        p.textContent = "PDF and EPUB open in the bundled viewer in the desktop app. " +
-                        "In this browser demo they are listed but not rendered.";
+        p.textContent = "A PDF or EPUB from a folder you picked opens in the bundled viewer " +
+                        "in the desktop app. The sample library carries one of each, so you can " +
+                        "see both working here.";
         page.appendChild(p);
         return;
       }
@@ -504,6 +525,84 @@
       p.textContent = "Could not open this file: " + (err && err.message ? err.message : err);
       page.appendChild(p);
     });
+  }
+
+  /* ------------------------------------------------------- the two viewers
+     pdf.js and epub.js are committed under vendor/, not fetched from a CDN: the
+     promise of this app is that it works in a room with no internet, and a viewer
+     that needs the network breaks that promise at the first book. Both load only
+     when a book of that kind is opened. */
+  function loadScript(src){
+    return new Promise(function(res, rej){
+      if (document.querySelector('script[data-vendor="' + src + '"]')) return res();
+      var el = document.createElement("script");
+      el.src = src;
+      el.setAttribute("data-vendor", src);
+      el.onload = function(){ res(); };
+      el.onerror = function(){ rej(new Error("could not load " + src)); };
+      document.head.appendChild(el);
+    });
+  }
+
+  function bar2(id){
+    return '<div class="bar2"><button class="btn ghost sm" id="' + id + '-prev">←</button>' +
+           '<span id="' + id + '-count">…</span>' +
+           '<button class="btn ghost sm" id="' + id + '-next">→</button></div>';
+  }
+
+  function pdfViewer(url){
+    var page = $("r-page");
+    page.innerHTML = '<canvas id="pv-canvas"></canvas>' + bar2("pv");
+    return loadScript("vendor/pdf.min.js").then(function(){
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = "vendor/pdf.worker.min.js";
+      return window.pdfjsLib.getDocument(url).promise;
+    }).then(function(doc){
+      var n = 1, total = doc.numPages;
+      function draw(){
+        return doc.getPage(n).then(function(pg){
+          var base = pg.getViewport({ scale: 1 });
+          var scale = Math.min(2, Math.max(0.8, (page.clientWidth - 56) / base.width));
+          var view = pg.getViewport({ scale: scale });
+          var canvas = $("pv-canvas");
+          canvas.width = view.width;
+          canvas.height = view.height;
+          return pg.render({ canvasContext: canvas.getContext("2d"), viewport: view }).promise;
+        }).then(function(){
+          $("pv-count").textContent = "page " + n + " of " + total;
+          $("pv-prev").disabled = n <= 1;
+          $("pv-next").disabled = n >= total;
+        });
+      }
+      $("pv-prev").onclick = function(){ if (n > 1) { n--; draw(); } };
+      $("pv-next").onclick = function(){ if (n < total) { n++; draw(); } };
+      return draw();
+    });
+  }
+
+  function epubViewer(url){
+    var page = $("r-page");
+    page.innerHTML = '<div class="ep" id="ep-view"></div>' + bar2("ep");
+    return loadScript("vendor/jszip.min.js")
+      .then(function(){ return loadScript("vendor/epub.min.js"); })
+      .then(function(){
+        var book = window.ePub(url);
+        var rendition = book.renderTo("ep-view", { width: "100%", height: "100%",
+                                              flow: "scrolled-doc", spread: "none" });
+        var total = 0;
+        book.loaded.navigation.then(function(nav){
+          total = (nav.toc || []).length;
+          if (!$("ep-count").textContent || $("ep-count").textContent === "…") {
+            $("ep-count").textContent = "chapter 1 of " + total;
+          }
+        });
+        rendition.on("relocated", function(pos){
+          var i = pos && pos.start && typeof pos.start.index === "number" ? pos.start.index : 0;
+          $("ep-count").textContent = total ? "chapter " + (i + 1) + " of " + total : "reading";
+        });
+        $("ep-prev").onclick = function(){ rendition.prev(); };
+        $("ep-next").onclick = function(){ rendition.next(); };
+        return rendition.display();
+      });
   }
 
   function paint(type, text){

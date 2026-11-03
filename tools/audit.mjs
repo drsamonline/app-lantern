@@ -99,6 +99,25 @@ ok("the server has a download mode", /download:\s*"read-only"/.test(srv) &&
 ok("read-only refuses a download", /this library is read-only/.test(srv));
 ok("the join flow exists", /"\/api\/join"/.test(srv) && /"\/api\/pending"/.test(srv));
 
+/* 5c. The two viewers are vendored, with their licences, and the app never
+   reaches for a CDN. A viewer fetched at runtime would break the one promise
+   this app makes: that it works in a room with no internet. */
+["vendor/pdf.min.js", "vendor/pdf.worker.min.js", "vendor/jszip.min.js",
+ "vendor/epub.min.js"].forEach((f) => {
+  ok("the app ships " + f, exists("docs/play/" + f));
+});
+ok("the viewers carry their licences",
+   exists("docs/play/vendor/LICENSE-pdfjs.txt") && exists("docs/play/vendor/LICENSE-jszip.md"));
+ok("the sample books exist",
+   exists("docs/play/sample/organon-excerpt.pdf") && exists("docs/play/sample/lantern-book.epub"));
+const appSrc = html["docs/play/index.html"] || "";
+ok("the reader points at the vendored viewers",
+   /vendor\/pdf\.min\.js/.test(appSrc) && /vendor\/epub\.min\.js/.test(appSrc));
+ok("no viewer is fetched from the network",
+   !/(?:src|href)="https?:\/\/[^"]*(?:pdf|epub|jszip)/i.test(appSrc));
+ok("the sample PDF is a real PDF", exists("docs/play/sample/organon-excerpt.pdf") &&
+   /^%PDF-/.test(read("docs/play/sample/organon-excerpt.pdf").slice(0, 5)));
+
 /* 6. The builds exist, and the single file is one file. */
 ok("dist/lantern.js exists (run tools/build.mjs)", exists("dist/lantern.js"));
 if (exists("dist/lantern.js")) {
