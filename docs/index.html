@@ -140,6 +140,18 @@
     td:first-child{width:auto}
   }
   @media (prefers-reduced-motion:reduce){.flicker{animation:none}}
+
+  /* ---------- light theme ----------
+     Added so the page reads on paper. It overrides the page's own variables and
+     nothing else — no markup, no layout, no type. */
+  :root, html {
+    color-scheme: light;
+    --ink: #14161a;
+    --panel: #ffffff;
+    --line: #e2ddd2;
+    --paper: #f7f6f2;
+    --dim: #5c6470;
+  }
 </style>
 </head>
 <body>
