@@ -93,6 +93,7 @@
   .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px}
   .card h3{margin:0 0 8px;font-size:16.5px;font-family:var(--serif);font-weight:600}
   .card p{margin:0;color:#b9c1cc;font-size:15px}
+  .card code{font-family:var(--mono);font-size:13px;color:var(--amber-soft)}
   .num{font:600 12px/1 var(--mono);color:var(--amber);letter-spacing:.16em;display:block;margin-bottom:12px}
 
   /* the demo invitation */
@@ -236,13 +237,14 @@
 
 <section style="padding-top:0">
   <div class="wrap">
-    <h2>Run it in ten seconds</h2>
-    <p class="sub">It prints the address a phone should open. No build step, no install.</p>
-    <pre><span class="ok">$</span> node server.js
-Lantern is serving 3 document(s) on port 8080
-Open on any device on this Wi-Fi:
-  http://192.168.1.24:8080/
-No internet is used at any point.</pre>
+    <h2>Get it running</h2>
+    <p class="sub">Three steps. No account, no sign-up, nothing sent anywhere — and one free program to install.</p>
+    <div class="three">
+      <div class="card"><span class="num">STEP 1</span><h3>Install the one program it needs</h3><p>Lantern runs on <b>Node.js</b>. Open <b>nodejs.org</b>, click the big green <b>LTS</b> button, then keep clicking <b>Next</b> until it finishes. That is the only thing you install.</p></div>
+      <div class="card"><span class="num">STEP 2</span><h3>Double-click to start it</h3><p>Unzip the download and double-click <b>start-lantern</b> on Windows, or <b>start-lantern.sh</b> on Linux. A black window opens and stays open — that window <i>is</i> Lantern running. Leave it open.</p></div>
+      <div class="card"><span class="num">STEP 3</span><h3>Tell people the address</h3><p>The window shows an address like <code>http://192.168.1.24:8080/</code>. Anyone on the same Wi-Fi types that into their browser. Nothing to install on their side, no account, no internet.</p></div>
+    </div>
+    <p class="hint">Would rather not install anything yet? <a href="demo/">Open the demo</a> — the real app, running over a sample library. Already live in a terminal? The whole thing is <code>node server.js</code>.</p>
   </div>
 </section>
 

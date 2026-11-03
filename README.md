@@ -25,6 +25,19 @@ starter pack.
 
 ## Run it
 
+Three steps, no terminal, no account.
+
+1. **Install Node.js** — open [nodejs.org](https://nodejs.org), click the big green **LTS**
+   button, keep clicking **Next** until it finishes. It is the only thing you install.
+2. **Start Lantern** — double-click **`start-lantern.bat`** on Windows, or **`start-lantern.sh`**
+   on Linux. A window opens and stays open; that window *is* Lantern running. Leave it open.
+3. **Tell people the address** — the window prints one, like `http://192.168.1.24:8080/`. Anyone on
+   the same Wi-Fi types it into their browser. Nothing to install on their side.
+
+Nothing is sent anywhere, and no internet is used at any point.
+
+### If you use a terminal
+
 ```bash
 node server.js          # or: node server.js 8080
 ```
@@ -41,8 +54,10 @@ No internet is used at any point.
 Then, on the host, open the Packs card and import `examples/starter-pack.json`.
 Anyone on the Wi-Fi can now read and search it.
 
-There is nothing to install and nothing to build: the host is one Node file with
-**no dependencies**, and the client is one page with no build step.
+There is nothing to build and no dependencies: the host is one Node file with **no runtime
+dependencies**, and the client is one page with no build step. Node.js itself is the one thing a
+person has to install, which is why the two launchers exist — they are for people who do not want
+to see a terminal.
 
 ### Or copy one file
 
