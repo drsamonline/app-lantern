@@ -188,6 +188,8 @@ const BUNDLE = [
   "public/lan-kit.js",
   "public/icon.svg",
   "examples/starter-pack.json",
+  "start-lantern.bat",
+  "start-lantern.sh",
   "README.md",
   "LICENSE",
   "package.json"
@@ -197,12 +199,38 @@ const files = BUNDLE.map((f) => ({ name: "lantern/" + f, data: fs.readFileSync(p
 files.push({
   name: "lantern/START-HERE.txt",
   data:
-    "Lantern " + pkg.version + "\n\n" +
-    "1. Install Node 18 or newer (node --version).\n" +
-    "2. In this folder: node server.js\n" +
-    "3. It prints an address like http://192.168.1.24:8080/ — open it on any device on the same Wi-Fi.\n" +
-    "4. In the Packs card, import examples/starter-pack.json.\n\n" +
-    "No internet is used at any point. Nothing to install beyond Node.\n"
+    "Lantern " + pkg.version + "\n" +
+    "================\n\n" +
+    "WHAT THIS IS\n" +
+    "  One computer serves a library to everyone else on the same Wi-Fi.\n" +
+    "  No internet, no account, nothing to sign up for.\n\n" +
+    "STEP 1 — Install the one program it needs\n" +
+    "  Open https://nodejs.org, click the big green LTS button, then keep\n" +
+    "  clicking Next until it finishes. That is the only thing you install.\n\n" +
+    "STEP 2 — Start Lantern\n" +
+    "  Windows: double-click  start-lantern.bat\n" +
+    "  Linux:   double-click  start-lantern.sh  (or right-click > Run)\n" +
+    "  A black window opens and stays open. That window IS Lantern running.\n" +
+    "  Leave it open. Closing it stops the library for everyone.\n\n" +
+    "STEP 3 — Tell people the address\n" +
+    "  The window prints one, like  http://192.168.1.24:8080/\n" +
+    "  Anyone on the same Wi-Fi types that into their browser.\n" +
+    "  Nothing to install on their side.\n\n" +
+    "ADD YOUR OWN BOOKS\n" +
+    "  A book, a set of notes, a whole shelf is one JSON file called a pack:\n" +
+    "    { \"id\": \"my-library\", \"title\": \"My Library\",\n" +
+    "      \"docs\": [ { \"path\": \"book.html\", \"title\": \"My Book\",\n" +
+    "                  \"content\": \"<h1>My Book</h1><p>...</p>\" } ] }\n" +
+    "  Start from examples/starter-pack.json — copy it, edit it, keep the shape.\n" +
+    "  Then: open the address in a browser > Packs card > choose your file >\n" +
+    "  Import pack. It is saved on the host and searchable straight away.\n\n" +
+    "CHANGE THE SETTINGS\n" +
+    "  Port:    node server.js 9000      (default 8080)\n" +
+    "  Packs:   the packs/ folder next to server.js\n\n" +
+    "IF SOMETHING GOES WRONG\n" +
+    "  \"Node is not installed\" — do STEP 1, then try again.\n" +
+    "  Nothing on the phone — same Wi-Fi? and is the black window still open?\n\n" +
+    "No internet is used at any point.\n"
 });
 
 const zipBuf = zip(files);

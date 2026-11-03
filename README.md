@@ -23,6 +23,12 @@ starter pack.
 
 ![Lantern](docs/icon-512.png)
 
+## Get it
+
+**[Download the latest release →](https://github.com/drsamonline/app-lantern/releases/latest)** — one
+`.zip`, about 53 KB. Inside: `start-lantern` for Windows and for Linux, the server, and a starter
+library. There is no installer and nothing to fetch afterwards.
+
 ## Run it
 
 Three steps, no terminal, no account.
@@ -35,6 +41,43 @@ Three steps, no terminal, no account.
    the same Wi-Fi types it into their browser. Nothing to install on their side.
 
 Nothing is sent anywhere, and no internet is used at any point.
+
+## Add your own books
+
+A book, a set of notes, or a whole shelf is one JSON file — a **pack**. There is no editor and no
+build step; the file is the format.
+
+1. **Copy the sample.** Open [`examples/starter-pack.json`](examples/starter-pack.json) in any text
+   editor and save a copy under a new name. It already has the shape: an `id`, a `title`, and a list
+   of `docs`.
+2. **Put your text in it.** Each document is a `path`, a `title`, and the text as simple HTML inside
+   `content`. One entry per chapter.
+
+   ```json
+   {
+     "id": "my-library",
+     "title": "My Library",
+     "docs": [
+       { "path": "chapter-1.html", "title": "Chapter 1",
+         "content": "<h1>Chapter 1</h1><p>The text of the chapter goes here.</p>" }
+     ]
+   }
+   ```
+
+3. **Import it.** Open the address the host printed, find the **Packs** card, choose your file and
+   press **Import pack**. It is saved on the host, hashed, and searchable immediately.
+
+A second pack later is searchable alongside the first — the search box covers the whole library, not
+one pack.
+
+## Settings
+
+There are two, and neither usually needs changing.
+
+| | |
+|---|---|
+| **the port** | `node server.js 9000`, or edit `8080` in `start-lantern.bat`. Change it when something else already owns 8080. |
+| **where the library lives** | the `packs/` folder next to `server.js`, one folder per pack with a manifest. Remove a pack from the Packs card or delete its folder; the index drops it on the next start. |
 
 ### If you use a terminal
 

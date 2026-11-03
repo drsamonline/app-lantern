@@ -238,13 +238,55 @@
 <section style="padding-top:0">
   <div class="wrap">
     <h2>Get it running</h2>
-    <p class="sub">Three steps. No account, no sign-up, nothing sent anywhere — and one free program to install.</p>
+    <p class="sub">One folder to download, one file to double-click, one address to share. No account, nothing sent anywhere.</p>
+
+    <p style="margin:20px 0 10px;display:flex;gap:12px;flex-wrap:wrap">
+      <a class="btn primary" href="https://github.com/drsamonline/app-lantern/releases/latest">Download Lantern — .zip, 53 KB</a>
+      <a class="btn ghost" href="demo/">Try the demo first</a>
+    </p>
+    <p class="hint" style="margin-top:0">Windows and Linux. Inside the zip: <b>start-lantern</b>, the server, and a starter library — 53 KB, no installer, no dependencies to fetch.</p>
+
     <div class="three">
       <div class="card"><span class="num">STEP 1</span><h3>Install the one program it needs</h3><p>Lantern runs on <b>Node.js</b>. Open <b>nodejs.org</b>, click the big green <b>LTS</b> button, then keep clicking <b>Next</b> until it finishes. That is the only thing you install.</p></div>
-      <div class="card"><span class="num">STEP 2</span><h3>Double-click to start it</h3><p>Unzip the download and double-click <b>start-lantern</b> on Windows, or <b>start-lantern.sh</b> on Linux. A black window opens and stays open — that window <i>is</i> Lantern running. Leave it open.</p></div>
+      <div class="card"><span class="num">STEP 2</span><h3>Unzip, then double-click</h3><p>Unzip the download, open the folder, and double-click <b>start-lantern</b> on Windows or <b>start-lantern.sh</b> on Linux. A black window opens and stays open — that window <i>is</i> Lantern running. Leave it open.</p></div>
       <div class="card"><span class="num">STEP 3</span><h3>Tell people the address</h3><p>The window shows an address like <code>http://192.168.1.24:8080/</code>. Anyone on the same Wi-Fi types that into their browser. Nothing to install on their side, no account, no internet.</p></div>
     </div>
     <p class="hint">Would rather not install anything yet? <a href="demo/">Open the demo</a> — the real app, running over a sample library. Already live in a terminal? The whole thing is <code>node server.js</code>.</p>
+  </section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <h2>Add your own books</h2>
+    <p class="sub">A book, a set of notes, a whole shelf is one JSON file — Lantern calls it a pack. Three steps, no coding.</p>
+    <div class="three">
+      <div class="card"><span class="num">STEP 1</span><h3>Copy the sample pack</h3><p>Open <code>examples/starter-pack.json</code> in any text editor — Notepad will do — and save a copy under a new name. It already has the shape you need: an id, a title, and a list of documents.</p></div>
+      <div class="card"><span class="num">STEP 2</span><h3>Put your text in it</h3><p>Each document is a path, a title, and the text as simple HTML. Copy one entry per chapter and paste your own words inside <code>content</code>. Headings go in <code>&lt;h1&gt;</code>, paragraphs in <code>&lt;p&gt;</code>.</p></div>
+      <div class="card"><span class="num">STEP 3</span><h3>Import it</h3><p>Open the address the window printed, scroll to the <b>Packs</b> card, choose your file and press <b>Import pack</b>. It is saved on the host and searchable the moment it lands.</p></div>
+    </div>
+    <pre>{
+  "id": "my-library",
+  "title": "My Library",
+  "docs": [
+    { "path": "chapter-1.html", "title": "Chapter 1",
+      "content": "&lt;h1&gt;Chapter 1&lt;/h1&gt;&lt;p&gt;The text of the chapter goes here.&lt;/p&gt;" }
+  ]
+}</pre>
+    <p class="hint">One pack can hold as many documents as you like. Import a second pack later and both are searchable together — the search box covers the whole library, not one pack.</p>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <h2>The settings</h2>
+    <p class="sub">There are two, and you probably do not need to change either.</p>
+    <table>
+      <thead><tr><th>What</th><th>How</th></tr></thead>
+      <tbody>
+        <tr><td>The port</td><td><code>node server.js 9000</code> — or edit <code>8080</code> in <code>start-lantern.bat</code>. Change it if the address does not open and something else on the computer is already using 8080.</td></tr>
+        <tr><td>Where the library is kept</td><td>The <code>packs/</code> folder next to <code>server.js</code>. Each pack gets its own folder with a manifest; leave it alone and it keeps working.</td></tr>
+        <tr><td>Removing a book</td><td>Delete the pack in the <b>Packs</b> card, or remove its folder from <code>packs/</code>. The search index drops it on the next start.</td></tr>
+      </tbody>
+    </table>
   </div>
 </section>
 
