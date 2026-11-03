@@ -102,6 +102,15 @@
       var(--panel);
     border:1px solid var(--line);border-radius:20px;padding:32px}
   .demo form{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+  .frame{position:relative;margin-top:20px;border:1px solid var(--line);border-radius:18px;
+    overflow:hidden;background:#0a0d11;aspect-ratio:16/10}
+  .frame img{display:block;width:100%;height:100%;object-fit:cover;object-position:top center}
+  .frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0;opacity:0;
+    transition:opacity .35s ease;background:var(--paper)}
+  .frame.ready iframe{opacity:1}
+  .frame.ready img{opacity:0}
+  .guided{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .guided .btn{padding:8px 14px;font-size:13.5px}
   .demo input[type=search]{
     flex:1 1 280px;background:#0b0f14;border:1px solid var(--line);border-radius:12px;
     padding:13px 15px;color:var(--paper);font:inherit;font-size:15.5px}
@@ -207,13 +216,19 @@
       <p class="sub" style="margin-bottom:0">The demo below runs the <strong>same</strong>
         <code style="font-family:var(--mono);font-size:13px">lib/search.js</code> the host runs — in your
         browser, over a pre-built copy of the starter pack. Nothing is fetched from anywhere.</p>
-      <form action="play/" method="get">
-        <input type="search" name="q" placeholder="Search the demo library…" aria-label="Search the demo library">
-        <button class="btn primary" type="submit">Search</button>
-      </form>
-      <p class="hint">The chips there are derived from the library itself. A document containing the
-        whole query as a phrase outranks one that merely carries the words — that is the phrase bonus,
-        not luck.</p>
+      <div class="frame" id="frame">
+        <img src="assets/app-desktop.png" alt="Lantern's shelf: six books from the sample library, each showing its format on the spine">
+        <iframe src="play/#shelf" title="Lantern — the app itself, running here" loading="lazy"></iframe>
+      </div>
+      <div class="guided">
+        <button class="btn ghost" data-route="shelf">The shelf</button>
+        <button class="btn ghost" data-route="share">Sharing a folder</button>
+        <button class="btn ghost" data-route="read/4">Read a book</button>
+        <a class="btn ghost" href="play/" target="_blank" rel="noopener">Open it full screen</a>
+      </div>
+      <p class="hint">This is the app itself in the frame, not a picture of it — the same file the
+        desktop build runs. Pick a real folder on your machine and it lists it; PDF and EPUB open in
+        the bundled viewers once the desktop build is running.</p>
     </div>
   </div>
 </section>
@@ -302,5 +317,22 @@
   </div>
 </footer>
 
+<script>
+  (function(){
+    var frame = document.getElementById("frame");
+    if (!frame) return;
+    var iframe = frame.querySelector("iframe");
+    var ok = location.protocol === "http:" || location.protocol === "https:";
+    if (!ok) return;                       /* opened from a file: keep the poster */
+    iframe.addEventListener("load", function(){ frame.classList.add("ready"); });
+    document.querySelectorAll("[data-route]").forEach(function(b){
+      b.onclick = function(){
+        iframe.src = "play/#" + b.dataset.route;
+        frame.classList.remove("ready");
+        frame.scrollIntoView({ behavior: "smooth", block: "center" });
+      };
+    });
+  })();
+</script>
 </body>
 </html>

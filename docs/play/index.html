@@ -293,16 +293,39 @@
   function title(name){
     return name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
   }
-  function go(view){
+  function go(view, hash){
     ["home","share","shelf","reader"].forEach(function(v){
       $("v-" + v).classList.toggle("on", v === view);
     });
     $("where").textContent = view === "home" ? "app" : view;
+    if (hash !== false){
+      var h = "#" + view;
+      if (location.hash !== h) history.replaceState(null, "", h);
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  /* A guided link can point at a screen: #shelf, #share, #read/2 */
+  function route(){
+    var h = (location.hash || "").replace(/^#/, "");
+    if (!h || h === "home") return go("home", false);
+    if (h === "share") return go("share", false);
+    if (h === "shelf"){
+      if (!state.books.length) useSample();
+      else drawShelf();
+      return go("shelf", false);
+    }
+    if (h.indexOf("read/") === 0){
+      if (!state.books.length) useSample();
+      var b = state.books[parseInt(h.slice(5), 10) || 0];
+      if (b){ openBook(b); return go("reader", false); }
+    }
+    go("home", false);
   }
   document.querySelectorAll("[data-go]").forEach(function(b){
     b.onclick = function(){ go(b.dataset.go); };
   });
+  window.addEventListener("hashchange", route);
 
   function setMode(text, live){
     $("mode").textContent = text;
@@ -533,7 +556,9 @@
     useSample();
     $("q").value = qs;
     drawShelf(qs);
-    go("shelf");
+    go("shelf", false);
+  } else {
+    route();
   }
 })();
 </script>
