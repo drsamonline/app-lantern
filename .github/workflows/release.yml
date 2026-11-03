@@ -1,0 +1,49 @@
+name: Release
+
+# A tag is not a release until something is attached to it. v1.1.0 went out with
+# zero assets, so the download button on the landing page pointed at a release
+# page with nothing to download. This builds the bundle on every tag and attaches
+# it, so the asset always exists and always matches the tag.
+
+on:
+  push:
+    tags: [ 'v*' ]
+
+permissions:
+  contents: write
+
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build the single file and the zip
+        run: node tools/build.mjs
+
+      - name: Check the bundle is there and is not empty
+        run: |
+          set -euo pipefail
+          VER="$(node -p "require('./package.json').version")"
+          ZIP="dist/lantern-${VER}.zip"
+          test -f "$ZIP" || { echo "::error::no $ZIP after the build"; exit 1; }
+          test "$(wc -c < "$ZIP")" -gt 20000 || { echo "::error::$ZIP is too small to be the bundle"; exit 1; }
+          unzip -l "$ZIP" | grep -q 'lantern/start-lantern.sh' || { echo "::error::the launchers are not in the bundle"; exit 1; }
+
+      - name: Attach it to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          VER="$(node -p "require('./package.json').version")"
+          ZIP="dist/lantern-${VER}.zip"
+          TAG="${GITHUB_REF_NAME}"
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --title "Lantern $VER" \
+              --notes "Lantern $VER. Download the zip below, unzip it, and double-click start-lantern. The same bundle is at dist/lantern.zip in the repository."
+          fi
+          gh release upload "$TAG" "$ZIP" --clobber
+          gh release view "$TAG" --json assets --jq '.assets[].name'

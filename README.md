@@ -25,9 +25,10 @@ starter pack.
 
 ## Get it
 
-**[Download the latest release →](https://github.com/drsamonline/app-lantern/releases/latest)** — one
-`.zip`, about 53 KB. Inside: `start-lantern` for Windows and for Linux, the server, and a starter
-library. There is no installer and nothing to fetch afterwards.
+**[Download Lantern →](https://github.com/drsamonline/app-lantern/raw/main/dist/lantern.zip)** — one
+`.zip`, about 55 KB. Inside: `start-lantern` for Windows and for Linux, the server, and a starter
+library. There is no installer and nothing to fetch afterwards. Every tagged release also carries
+the same bundle as an attached asset, built by `.github/workflows/release.yml`.
 
 ## Run it
 

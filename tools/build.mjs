@@ -240,6 +240,9 @@ const zipAbs = path.join(ROOT, zipRel);
 const oldZip = fs.existsSync(zipAbs) ? fs.readFileSync(zipAbs) : null;
 if (!oldZip || !oldZip.equals(zipBuf)) {
   fs.writeFileSync(zipAbs, zipBuf);
+  /* A stable name beside the versioned one: the landing page's download button
+     points at this, so it never has to be edited when the version changes. */
+  fs.writeFileSync(path.join(ROOT, "dist", "lantern.zip"), zipBuf);
   changed++;
 }
 
