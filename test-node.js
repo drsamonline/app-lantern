@@ -21,13 +21,15 @@ const http = require("http");
 /* A tiny fetch, on Node's own http module — the sandbox's egress proxy gets in
    the way of undici here, and a LAN test must not depend on the internet's
    plumbing anyway. */
-function request(method, urlPath, body) {
+function request(method, urlPath, body, extraHeaders) {
   return new Promise((resolve, reject) => {
     const payload = body === undefined ? null : Buffer.from(
       typeof body === "string" ? body : JSON.stringify(body), "utf8");
     const req = http.request(
       { host: "127.0.0.1", port: PORT, path: urlPath, method,
-        headers: payload ? { "content-type": "application/json", "content-length": payload.length } : {} },
+        headers: Object.assign({},
+          payload ? { "content-type": "application/json", "content-length": payload.length } : {},
+          extraHeaders || {}) },
       (res) => {
         const chunks = [];
         res.on("data", (c) => chunks.push(c));
@@ -56,10 +58,35 @@ const TMP = fs.mkdtempSync(path.join(os.tmpdir(), "lantern-test-"));
 process.env.LANTERN_PACKS = path.join(TMP, "packs");
 process.env.LANTERN_QUARANTINE = path.join(TMP, "quarantine");
 
+/* Settings live beside the server by default. A test run must not leave one in
+   the repository, and must start from the defaults every time. */
+process.env.LANTERN_SETTINGS = path.join(os.tmpdir(), "lantern-test-settings.json");
+try { fs.unlinkSync(process.env.LANTERN_SETTINGS); } catch (e) { /* fine */ }
+
 const lantern = require("./server.js");
 
 let passed = 0;
 const failures = [];
+
+let FIRST_DOC = "";
+async function CURRENT_FIRST_DOC() {
+  if (FIRST_DOC) return FIRST_DOC;
+  let packs = await (await get("/api/packs")).json();
+  if (!packs.packs.length) {
+    const starter = JSON.parse(fs.readFileSync(path.join(__dirname, "examples/starter-pack.json"), "utf8"));
+    await post("/api/packs", starter);
+    packs = await (await get("/api/packs")).json();
+  }
+  for (const p of packs.packs) {
+    for (const rel of p.paths || []) {
+      if ((await get("/p/" + p.id + "/" + rel)).status === 200) {
+        FIRST_DOC = p.id + "/" + rel;
+        return FIRST_DOC;
+      }
+    }
+  }
+  throw new Error("no readable document to test with");
+}
 
 function ok(cond, name) {
   if (cond) {
@@ -327,6 +354,50 @@ async function main() {
      "the single file serves the icon it carries");
   child.kill();
   fs.rmSync(lone, { recursive: true, force: true });
+
+  /* 14b. The two modes. Both default safe, and both are enforced by the server. */
+  const settings0 = await (await get("/api/settings")).json();
+  eq(settings0.access, "open", "access defaults to open");
+  eq(settings0.download, "read-only", "download defaults to read-only");
+
+  const firstDoc = await CURRENT_FIRST_DOC(); /* pack id + path of a real document */
+  const dl0 = await get("/p/" + firstDoc + "?download=1");
+  eq(dl0.status, 403, "read-only refuses a download");
+  eq((await dl0.json()).error, "this library is read-only", "and says why");
+  ok(!dl0.headers.get("content-disposition"), "and sets no attachment header");
+
+  const dl0plain = await get("/p/" + firstDoc);
+  eq(dl0plain.status, 200, "the same document still reads in the app");
+  ok(!dl0plain.headers.get("content-disposition"), "reading is not a download");
+
+  const set1 = await post("/api/settings", { download: "allow" });
+  eq(set1.status, 200, "the host can allow downloads");
+  const dl1 = await get("/p/" + firstDoc + "?download=1");
+  eq(dl1.status, 200, "allow lets the file through");
+  ok(/attachment/.test(String(dl1.headers.get("content-disposition"))), "with an attachment header");
+
+  /* Access mode. The host is always let in, by design — the owner runs the
+     library on the machine it is served from. So what a loopback test can prove
+     is the default, the code, and that an open library answers a join; the
+     refusal of an unapproved device is asserted by the audit against the source,
+     and needs a second device on a real LAN to see over HTTP. */
+  eq((await (await get("/api/join")).json()).open, true,
+     "an open library answers a join without a code");
+
+  const set2 = await post("/api/settings", { access: "approved", download: "read-only" });
+  eq(set2.status, 200, "the host can require approval");
+  const code = (await (await get("/api/settings")).json()).code;
+  ok(/^\d{6}$/.test(String(code || "")), "approved mode has a six-digit code");
+
+  const localJoin = await get("/api/join");
+  eq((await localJoin.json()).open, true, "the host itself is always let in");
+
+  eq((await post("/api/settings", { access: "sideways" })).status, 400,
+     "an unknown access mode is refused");
+  eq((await post("/api/settings", { download: "everything" })).status, 400,
+     "an unknown download mode is refused");
+
+  await post("/api/settings", { access: "open", download: "read-only" });
 
   /* 15. The audit: every claim in the README checked against the repository. */
   let auditOut = "";
