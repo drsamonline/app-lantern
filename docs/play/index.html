@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lantern — share a folder, read it anywhere</title>
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0b0e12">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<style>
+  :root{
+    --ink:#e9e4d8; --dim:#9aa3ad; --paper:#0b0e12; --panel:#12161c; --line:#222a33;
+    --amber:#f0b429; --amber-soft:#ffd479; --green:#5fbf8a; --red:#e2705a;
+    --serif:"Iowan Old Style",Georgia,"Times New Roman",serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.55 var(--sans);
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:960px;margin:0 auto;padding:0 22px}
+  header{position:sticky;top:0;z-index:5;background:rgba(11,14,18,.95);backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line)}
+  header .wrap{display:flex;align-items:center;gap:12px;height:58px}
+  .logo{width:30px;height:30px;border-radius:8px;flex:0 0 auto}
+  .name{font-family:var(--serif);font-size:19px}
+  .name small{font:11px var(--mono);letter-spacing:.14em;color:var(--dim);margin-left:8px}
+  header .sp{flex:1}
+  .chip{font:11px/1 var(--mono);letter-spacing:.1em;padding:6px 10px;border-radius:999px;
+    border:1px solid var(--line);color:var(--dim)}
+  .chip.live{color:var(--green);border-color:rgba(95,191,138,.35)}
+  main{padding:34px 0 80px}
+  .view{display:none}
+  .view.on{display:block}
+  h1{font-family:var(--serif);font-weight:600;font-size:clamp(28px,4.4vw,42px);line-height:1.08;
+    letter-spacing:-.015em;margin:0 0 12px}
+  .lede{color:var(--dim);font-size:17px;max-width:52ch;margin:0 0 26px}
+  .hero{display:grid;grid-template-columns:1.15fr .85fr;gap:26px;align-items:center;margin-bottom:24px}
+  .lamp{position:relative;display:flex;justify-content:center}
+  .lamp svg{width:min(250px,100%);height:auto;border-radius:22px;
+    box-shadow:0 26px 80px -28px rgba(240,180,41,.55),0 0 0 1px rgba(255,255,255,.04)}
+  .lamp::after{content:"";position:absolute;inset:auto 0 -34px 0;height:100px;
+    background:radial-gradient(ellipse at 50% 0%,rgba(240,180,41,.16),transparent 70%);
+    filter:blur(6px);pointer-events:none}
+  .flicker{animation:flicker 6.5s infinite ease-in-out}
+  @keyframes flicker{0%,100%{opacity:1}47%{opacity:.94}52%{opacity:1}73%{opacity:.97}}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:0 0 18px}
+  .door{display:block;text-align:left;background:var(--panel);border:1px solid var(--line);
+    border-radius:16px;padding:22px 20px;cursor:pointer;color:var(--ink);transition:.15s;width:100%;
+    font:inherit}
+  .door:hover{border-color:#3a4653;transform:translateY(-2px)}
+  .door:focus-visible{outline:2px solid var(--amber);outline-offset:3px}
+  .door .k{font:600 11px/1 var(--mono);letter-spacing:.16em;color:var(--amber);display:block;margin-bottom:12px}
+  .door h2{font-family:var(--serif);font-size:21px;margin:0 0 6px;font-weight:600}
+  .door p{margin:0;color:var(--dim);font-size:14px}
+  .found{display:flex;align-items:center;gap:10px;color:var(--dim);font-size:13.5px;
+    border-top:1px solid var(--line);padding-top:16px;flex-wrap:wrap}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--green);
+    box-shadow:0 0 0 3px rgba(95,191,138,.15)}
+  .btn{border-radius:11px;padding:10px 16px;font:14.5px var(--sans);cursor:pointer;
+    border:1px solid var(--line);background:transparent;color:var(--ink)}
+  .btn.primary{background:var(--amber);color:#1a1200;border-color:transparent;font-weight:600}
+  .btn.primary:hover{background:var(--amber-soft)}
+  .btn.ghost:hover{background:#1a2029}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn.sm{padding:6px 11px;font-size:13px;border-radius:9px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px}
+  .row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+  .row:last-child{border-bottom:0}
+  .row .grow{flex:1;min-width:0}
+  .path{font-family:var(--mono);font-size:13px;overflow-wrap:anywhere}
+  .meta{font-size:12.5px;color:var(--dim);margin-top:3px}
+  .hint{color:var(--dim);font-size:13.5px;margin-top:14px}
+  .hint code{font-family:var(--mono);font-size:12.5px;color:var(--amber-soft)}
+  .note{background:rgba(240,180,41,.07);border:1px solid rgba(240,180,41,.28);border-radius:13px;
+    padding:14px 16px;margin-top:20px;font-size:13.5px;color:#e8d9b6}
+  .note b{color:var(--amber)}
+  .shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:12px}
+  .book{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:13px;
+    cursor:pointer;text-align:left;color:inherit;font:inherit;width:100%}
+  .book:hover{border-color:#3a4653}
+  .book .spine{height:58px;border-radius:7px;margin-bottom:10px;
+    background:linear-gradient(135deg,#1b222b,#141a21);border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+    font:600 10px/1 var(--mono);letter-spacing:.14em;color:#5b6a7a}
+  .book .t{font-size:13px;line-height:1.35;margin:0 0 3px;overflow-wrap:anywhere}
+  .book .m{font-size:11px;color:var(--dim);font-family:var(--mono)}
+  .search{width:100%;background:#0a0d11;border:1px solid var(--line);border-radius:11px;
+    padding:11px 13px;color:var(--ink);font-size:15px;margin-bottom:16px}
+  .reader-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .reader-top strong{font-family:var(--serif);font-size:18px;font-weight:600}
+  .page{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px 28px}
+  .page h4{font-family:var(--serif);font-size:24px;margin:0 0 14px;font-weight:600}
+  .page p{font-size:16.5px;line-height:1.72;color:#d9d3c6;margin:0 0 14px;max-width:64ch}
+  .page pre{white-space:pre-wrap;font:14.5px/1.75 var(--mono);color:#d9d3c6;margin:0}
+  .page iframe{width:100%;height:60vh;border:0;border-radius:10px;background:#fff}
+  .page img{max-width:100%;height:auto;border-radius:10px}
+  footer{border-top:1px solid var(--line);padding:20px 0;color:var(--dim);font-size:12.5px}
+  footer a{color:var(--dim)}
+  @media (max-width:760px){
+    .hero,.two{grid-template-columns:1fr}
+    .lamp{order:-1}.lamp svg{width:min(180px,55%)}
+  }
+</style>
+</head>
+<body>
+
+<header><div class="wrap">
+  <svg class="logo" viewBox="0 0 512 512" aria-hidden="true">
+    <defs>
+      <radialGradient id="g" cx="50%" cy="46%" r="46%">
+        <stop offset="0%" stop-color="#F0B429" stop-opacity=".42"/>
+        <stop offset="55%" stop-color="#F0B429" stop-opacity=".12"/>
+        <stop offset="100%" stop-color="#F0B429" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="b" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#1E2632"/><stop offset="55%" stop-color="#161C25"/>
+        <stop offset="100%" stop-color="#11161D"/>
+      </linearGradient>
+      <linearGradient id="f" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#FFF3C4"/><stop offset="55%" stop-color="#FFD166"/>
+        <stop offset="100%" stop-color="#F0902B"/>
+      </linearGradient>
+      <linearGradient id="m" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#3A4553"/><stop offset="100%" stop-color="#232B36"/>
+      </linearGradient>
+    </defs>
+    <rect width="512" height="512" rx="112" fill="#0D1014"/>
+    <circle cx="256" cy="252" r="212" fill="url(#g)"/>
+    <path d="M180 150a76 76 0 0 1 152 0" fill="none" stroke="#2B3542" stroke-width="15" stroke-linecap="round"/>
+    <path d="M180 150a76 76 0 0 1 152 0" fill="none" stroke="#F0B429" stroke-width="4" stroke-linecap="round" opacity=".5"/>
+    <rect x="196" y="136" width="120" height="30" rx="10" fill="url(#m)"/>
+    <rect x="216" y="126" width="80" height="14" rx="7" fill="#2B3542"/>
+    <path d="M184 170h144l-12 196a32 32 0 0 1-32 30h-56a32 32 0 0 1-32-30z" fill="url(#b)" stroke="#2B3542" stroke-width="8"/>
+    <path d="M256 196c10 22 30 40 34 66a34 34 0 1 1-68 0c4-26 24-44 34-66z" fill="url(#f)"/>
+    <path d="M256 236c6 14 16 24 18 38a18 18 0 1 1-36 0c2-14 12-24 18-38z" fill="#FFF6D8"/>
+    <path d="M198 176v192M314 176v192" stroke="#2B3542" stroke-width="7" stroke-linecap="round"/>
+    <path d="M198 176v192M314 176v192" stroke="#F0B429" stroke-width="2" stroke-linecap="round" opacity=".35"/>
+    <rect x="190" y="392" width="132" height="26" rx="9" fill="url(#m)"/>
+    <rect x="212" y="418" width="88" height="10" rx="5" fill="#2B3542"/>
+  </svg>
+  <span class="name">Lantern <small id="where">app</small></span>
+  <span class="sp"></span>
+  <span class="chip" id="mode">no library open</span>
+</div></header>
+
+<main class="wrap">
+
+  <!-- ------------------------------------------------------------ first -->
+  <section class="view on" id="v-home">
+    <div class="hero">
+      <div>
+        <h1>Books on this Wi-Fi,<br>read from any chair.</h1>
+        <p class="lede" style="margin-bottom:0">One computer shares a folder. Everyone else opens this
+          page and reads — the books open inside it.</p>
+      </div>
+      <div class="lamp">
+        <svg class="flicker" viewBox="0 0 512 512" role="img" aria-label="The Lantern mark: a lamp with a flame in it">
+          <defs>
+            <radialGradient id="g2" cx="50%" cy="46%" r="46%">
+              <stop offset="0%" stop-color="#F0B429" stop-opacity=".42"/>
+              <stop offset="55%" stop-color="#F0B429" stop-opacity=".12"/>
+              <stop offset="100%" stop-color="#F0B429" stop-opacity="0"/>
+            </radialGradient>
+            <linearGradient id="b2" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#1E2632"/><stop offset="55%" stop-color="#161C25"/>
+              <stop offset="100%" stop-color="#11161D"/>
+            </linearGradient>
+            <linearGradient id="f2" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#FFF3C4"/><stop offset="55%" stop-color="#FFD166"/>
+              <stop offset="100%" stop-color="#F0902B"/>
+            </linearGradient>
+            <linearGradient id="m2" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#3A4553"/><stop offset="100%" stop-color="#232B36"/>
+            </linearGradient>
+          </defs>
+          <rect width="512" height="512" rx="112" fill="#0D1014"/>
+          <circle cx="256" cy="252" r="212" fill="url(#g2)"/>
+          <path d="M180 150a76 76 0 0 1 152 0" fill="none" stroke="#2B3542" stroke-width="15" stroke-linecap="round"/>
+          <path d="M180 150a76 76 0 0 1 152 0" fill="none" stroke="#F0B429" stroke-width="4" stroke-linecap="round" opacity=".5"/>
+          <rect x="196" y="136" width="120" height="30" rx="10" fill="url(#m2)"/>
+          <rect x="216" y="126" width="80" height="14" rx="7" fill="#2B3542"/>
+          <path d="M184 170h144l-12 196a32 32 0 0 1-32 30h-56a32 32 0 0 1-32-30z" fill="url(#b2)" stroke="#2B3542" stroke-width="8"/>
+          <path d="M256 196c10 22 30 40 34 66a34 34 0 1 1-68 0c4-26 24-44 34-66z" fill="url(#f2)"/>
+          <path d="M256 236c6 14 16 24 18 38a18 18 0 1 1-36 0c2-14 12-24 18-38z" fill="#FFF6D8"/>
+          <path d="M198 176v192M314 176v192" stroke="#2B3542" stroke-width="7" stroke-linecap="round"/>
+          <path d="M198 176v192M314 176v192" stroke="#F0B429" stroke-width="2" stroke-linecap="round" opacity=".35"/>
+          <rect x="190" y="392" width="132" height="26" rx="9" fill="url(#m2)"/>
+          <rect x="212" y="418" width="88" height="10" rx="5" fill="#2B3542"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="two">
+      <button class="door" id="door-share">
+        <span class="k">I HAVE THE BOOKS</span>
+        <h2>Share my books</h2>
+        <p>Pick a folder on this computer. People in the room can read it.</p>
+      </button>
+      <button class="door" id="door-read">
+        <span class="k">I WANT TO READ</span>
+        <h2>Read books</h2>
+        <p>Open a library — the sample one here, or one shared on your Wi-Fi.</p>
+      </button>
+    </div>
+
+    <div class="found">
+      <span class="dot"></span>
+      <span id="found-line">Nothing found yet — open a folder, or try the sample library.</span>
+    </div>
+
+    <div class="note" id="demo-note"><b>This page is the demo.</b> A browser cannot serve a folder to
+      other devices, so here the two doors open a folder or the sample library on this machine. The
+      desktop app does the sharing: same screens, plus the address, the QR and the access modes.</div>
+  </section>
+
+  <!-- ------------------------------------------------------------ share -->
+  <section class="view" id="v-share">
+    <h1>What should people see?</h1>
+    <p class="lede">Pick the folders you want to share. Sub-folders come with them. Nothing outside
+      this list is ever served.</p>
+
+    <div class="card">
+      <div id="folders"><div class="row"><div class="grow">
+        <div class="path">No folder chosen yet</div>
+        <div class="meta">Pick one below — nothing leaves this machine</div>
+      </div></div></div>
+      <div class="row" style="border-bottom:0;padding-top:16px">
+        <button class="btn ghost" id="pick">+ Choose a folder…</button>
+        <button class="btn ghost" id="pick-sample">Use the sample library</button>
+      </div>
+    </div>
+
+    <div class="note"><b>Serving needs the desktop app.</b> A browser page cannot listen on the
+      network, so this demo can open a folder but not share it. In the app, this screen also shows the
+      address, the QR, the six-digit code and the two access modes — anyone on this Wi-Fi, or only
+      people you let in.</div>
+
+    <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn primary" id="share-read">Read what I picked</button>
+      <button class="btn ghost" data-go="home">Back</button>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------------ shelf -->
+  <section class="view" id="v-shelf">
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+      <h1 style="margin-bottom:4px" id="shelf-title">Shelf</h1>
+      <span class="chip live" id="shelf-count">0 books</span>
+    </div>
+    <p class="lede" id="shelf-sub" style="margin-bottom:18px">Everything in the folder you chose.</p>
+
+    <input class="search" id="q" placeholder="Search by title or file name…" autocomplete="off">
+    <div class="shelf" id="books"></div>
+
+    <div style="margin-top:22px;display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn ghost" data-go="share">Change folder</button>
+      <button class="btn ghost" data-go="home">Back</button>
+    </div>
+  </section>
+
+  <!-- ----------------------------------------------------------- reader -->
+  <section class="view" id="v-reader">
+    <div class="reader-top">
+      <button class="btn ghost sm" data-go="shelf">← Shelf</button>
+      <strong id="r-title">—</strong>
+      <span class="chip" id="r-type">—</span>
+    </div>
+    <div class="page" id="r-page"></div>
+  </section>
+
+</main>
+
+<footer><div class="wrap">
+  Lantern · PolyForm Noncommercial 1.0.0 · © 2026 Dr Sohil Momin ·
+  <a href="../">the page</a> · <a href="https://github.com/drsamonline/app-lantern">source</a>
+</div></footer>
+
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+  var state = { name: "", books: [], open: null };
+
+  var READABLE = { html:1, htm:1, md:1, markdown:1, txt:1, text:1, pdf:1, epub:1,
+                   png:1, jpg:1, jpeg:1, gif:1, webp:1, svg:1 };
+
+  function ext(name){
+    var i = name.lastIndexOf(".");
+    return i < 0 ? "" : name.slice(i + 1).toLowerCase();
+  }
+  function title(name){
+    return name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
+  }
+  function go(view){
+    ["home","share","shelf","reader"].forEach(function(v){
+      $("v-" + v).classList.toggle("on", v === view);
+    });
+    $("where").textContent = view === "home" ? "app" : view;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  document.querySelectorAll("[data-go]").forEach(function(b){
+    b.onclick = function(){ go(b.dataset.go); };
+  });
+
+  function setMode(text, live){
+    $("mode").textContent = text;
+    $("mode").className = "chip" + (live ? " live" : "");
+  }
+
+  /* ---------------------------------------------------------- the sample */
+  var SAMPLE = {
+    name: "Sample library",
+    books: [
+      { path: "what-is-lantern.html", title: "What Lantern is", type: "html",
+        body: "<h4>What Lantern is</h4><p>Lantern turns one device on your Wi-Fi into a local content server. Anyone on the same network opens the address it prints, in a plain browser, and reads the library.</p><p>No internet is used at any point, and nothing leaves the host unless you export it.</p>" },
+      { path: "make-a-pack.md", title: "Make a pack", type: "md",
+        body: "A pack is one folder of documents.\n\nOn the desktop app you point Lantern at a folder; it builds the index itself and keeps a manifest of what it found.\n\nNothing is uploaded anywhere. The host serves the files it was given, and refuses anything outside them." },
+      { path: "the-reader.txt", title: "The reader", type: "txt",
+        body: "The reader is the same for every format.\n\nHTML, Markdown and plain text render as text, with the reading position remembered per device.\n\nPDF and EPUB open in bundled viewers, so a folder of scanned books is still a library.\n\nImages open as a page you can zoom." },
+      { path: "access-modes.md", title: "Access modes", type: "md",
+        body: "Two modes, per library.\n\nAnyone on this Wi-Fi - the library answers every device on the network. Right for a classroom.\n\nOnly people I let in - a six-digit code and a QR; a device waits until you approve it once, then it is remembered." },
+      { path: "read-only.md", title: "Read only, honestly", type: "md",
+        body: "Read only means there is no download button anywhere, and the file never lands on the reader's device.\n\nIt does not mean a book cannot be copied. Anyone can photograph a screen, and a browser can always read what it renders.\n\nIf a book must not be copied, it does not belong on a shared library. That is the only real control." },
+      { path: "supported-files.md", title: "What opens", type: "md",
+        body: "HTML, Markdown and plain text read directly.\n\nPDF reads in the built-in viewer, page by page, and is searchable when it has a text layer.\n\nEPUB reads chapter by chapter.\n\nImages open as a page you can zoom. A scan with no text layer is searchable by file name only." }
+    ]
+  };
+
+  function useSample(){
+    state.name = SAMPLE.name;
+    state.books = SAMPLE.books.map(function(b){
+      return { path: b.path, title: b.title, type: b.type, body: b.body, size: b.body.length };
+    });
+    renderFolders();
+    setMode("sample library", true);
+    $("found-line").textContent = "Sample library loaded — " + state.books.length + " books.";
+    drawShelf();
+    go("shelf");
+  }
+
+  /* ------------------------------------------------------- a real folder */
+  function readAll(dir, prefix, out, depth){
+    var entries = dir.entries();
+    var jobs = [];
+    function step(){
+      return entries.next().then(function(r){
+        if (r.done) return Promise.all(jobs);
+        var h = r.value;
+        var path = prefix ? prefix + "/" + h.name : h.name;
+        if (h.kind === "directory"){
+          if (depth > 0 && h.name.charAt(0) !== "."){
+            jobs.push(readAll(h, path, out, depth - 1));
+          }
+        } else if (h.name.charAt(0) !== "."){
+          out.push({ handle: h, path: path, name: h.name, type: ext(h.name) });
+        }
+        return step();
+      });
+    }
+    return step();
+  }
+
+  function pickFolder(){
+    if (!window.showDirectoryPicker){
+      alert("This browser cannot open a folder. Chrome, Edge or a Chromium browser can. " +
+            "The sample library works everywhere.");
+      return;
+    }
+    window.showDirectoryPicker({ mode: "read" }).then(function(dir){
+      var found = [];
+      return readAll(dir, "", found, 3).then(function(){
+        state.name = dir.name;
+        state.books = found.map(function(f){
+          return { handle: f.handle, path: f.path, title: title(f.name), type: f.type,
+                   readable: !!READABLE[f.type] };
+        }).sort(function(a, b){ return a.path.localeCompare(b.path); });
+        renderFolders();
+        setMode(dir.name, true);
+        $("found-line").textContent = state.books.length + " files in “" + dir.name + "”.";
+        drawShelf();
+        go("shelf");
+      });
+    }).catch(function(err){
+      if (err && err.name === "AbortError") return;
+      alert("Could not open that folder: " + (err && err.message ? err.message : err));
+    });
+  }
+
+  function renderFolders(){
+    var readable = state.books.filter(function(b){ return b.body != null || b.readable; }).length;
+    var nameOnly = state.books.length - readable;
+    $("folders").innerHTML =
+      '<div class="row"><div class="grow"><div class="path"></div>' +
+      '<div class="meta"></div></div><span class="chip live">open</span></div>';
+    var row = $("folders").firstChild;
+    row.querySelector(".path").textContent = state.name;
+    row.querySelector(".meta").textContent =
+      state.books.length + " files · " + readable + " readable · " + nameOnly + " by name only";
+  }
+
+  /* --------------------------------------------------------------- shelf */
+  function drawShelf(filter){
+    var list = state.books.filter(function(b){
+      if (!filter) return true;
+      var q = filter.toLowerCase();
+      return (b.title + " " + b.path).toLowerCase().indexOf(q) >= 0;
+    });
+    $("shelf-title").textContent = state.name || "Shelf";
+    $("shelf-count").textContent = state.books.length +
+      (state.books.length === 1 ? " book" : " books");
+    $("shelf-sub").textContent = state.books.length
+      ? "Everything in the folder you chose. Tap one to read it here."
+      : "No books yet — choose a folder, or use the sample library.";
+    var wrap = $("books");
+    wrap.innerHTML = "";
+    list.forEach(function(b){
+      var btn = document.createElement("button");
+      btn.className = "book";
+      btn.type = "button";
+      btn.innerHTML = '<div class="spine"></div><p class="t"></p><p class="m"></p>';
+      btn.querySelector(".spine").textContent = (b.type || "file").toUpperCase().slice(0, 4);
+      btn.querySelector(".t").textContent = b.title || b.path;
+      btn.querySelector(".m").textContent = (b.body != null || b.readable) ? "readable" : "name only";
+      btn.onclick = function(){ openBook(b); };
+      wrap.appendChild(btn);
+    });
+  }
+
+  /* -------------------------------------------------------------- reader */
+  function openBook(b){
+    state.open = b;
+    $("r-title").textContent = b.title || b.path;
+    $("r-type").textContent = (b.type || "file").toUpperCase();
+    var page = $("r-page");
+    page.innerHTML = '<p style="color:var(--dim)">Opening…</p>';
+
+    if (b.body != null){                       // the sample library
+      return paint(b.type, b.body);
+    }
+    if (!b.handle){
+      return paint("", "This file is listed but has no content to read here.");
+    }
+    b.handle.getFile().then(function(file){
+      if (b.type === "png" || b.type === "jpg" || b.type === "jpeg" ||
+          b.type === "gif" || b.type === "webp" || b.type === "svg"){
+        page.innerHTML = "";
+        var img = document.createElement("img");
+        img.alt = b.title || b.path;
+        img.src = URL.createObjectURL(file);
+        page.appendChild(img);
+        return;
+      }
+      if (b.type === "html" || b.type === "htm"){
+        return file.text().then(function(t){
+          page.innerHTML = "";
+          var f = document.createElement("iframe");
+          f.setAttribute("sandbox", "");          // no scripts, no same-origin
+          f.setAttribute("title", b.title || b.path);
+          f.srcdoc = t;
+          page.appendChild(f);
+        });
+      }
+      if (b.type === "pdf" || b.type === "epub"){
+        page.innerHTML = "";
+        var p = document.createElement("p");
+        p.style.color = "var(--dim)";
+        p.textContent = "PDF and EPUB open in the bundled viewer in the desktop app. " +
+                        "In this browser demo they are listed but not rendered.";
+        page.appendChild(p);
+        return;
+      }
+      return file.text().then(function(t){ paint(b.type, t); });
+    }).catch(function(err){
+      page.innerHTML = "";
+      var p = document.createElement("p");
+      p.style.color = "var(--red)";
+      p.textContent = "Could not open this file: " + (err && err.message ? err.message : err);
+      page.appendChild(p);
+    });
+  }
+
+  function paint(type, text){
+    var page = $("r-page");
+    page.innerHTML = "";
+    if (type === "html" || type === "htm"){
+      var f = document.createElement("iframe");
+      f.setAttribute("sandbox", "");
+      f.srcdoc = text;
+      page.appendChild(f);
+      return;
+    }
+    if (type === "md" || type === "markdown"){
+      text.split(/\n{2,}/).forEach(function(block){
+        var b = block.trim();
+        if (!b) return;
+        var h = document.createElement("p");
+        if (/^#\s/.test(b)){
+          h = document.createElement("h4");
+          h.textContent = b.replace(/^#\s*/, "");
+        } else {
+          h.textContent = b.replace(/[*_`]/g, "");
+        }
+        page.appendChild(h);
+      });
+      return;
+    }
+    var pre = document.createElement("pre");
+    pre.textContent = text;
+    page.appendChild(pre);
+  }
+
+  /* --------------------------------------------------------------- wiring */
+  $("door-share").onclick = function(){ go("share"); };
+  $("door-read").onclick = function(){
+    if (state.books.length) { drawShelf(); go("shelf"); }
+    else useSample();
+  };
+  $("pick").onclick = pickFolder;
+  $("pick-sample").onclick = useSample;
+  $("share-read").onclick = function(){
+    if (!state.books.length) return useSample();
+    drawShelf(); go("shelf");
+  };
+  $("q").oninput = function(){ drawShelf($("q").value); };
+
+  setMode("no library open", false);
+
+  /* The landing page's search box posts ?q= here. Land on the sample library with it applied. */
+  var qs = new URLSearchParams(location.search).get("q");
+  if (qs){
+    useSample();
+    $("q").value = qs;
+    drawShelf(qs);
+    go("shelf");
+  }
+})();
+</script>
+</body>
+</html>
