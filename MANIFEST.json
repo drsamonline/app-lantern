@@ -19,7 +19,19 @@
       "producer": "bootstrap@2026-11-04",
       "class": "generated",
       "at": "2026-11-04T20:01:17Z"
+    },
+    "docs/assets/support-portrait.jpg": {
+      "sha": "c2150f09a5c10d616faf049f8e516d6fffd1a269",
+      "producer": "human",
+      "class": "generated",
+      "at": "2026-11-06T10:53:37Z"
+    },
+    "docs/assets/upi-qr.svg": {
+      "sha": "951a37f7ea9954fbabce736f3dd5aefb2dce2cb2",
+      "producer": "human",
+      "class": "generated",
+      "at": "2026-11-06T10:53:37Z"
     }
   },
-  "updated": "2026-11-04T20:01:17Z"
+  "updated": "2026-11-06T10:53:37Z"
 }
