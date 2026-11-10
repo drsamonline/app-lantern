@@ -3,6 +3,11 @@
   "version": "1.2.0",
   "private": true,
   "description": "Lantern — serve a whole library of offline content over the LAN. Zero runtime dependencies.",
+  "author": {
+    "name": "Dr Sohil Momin",
+    "email": "sohilmomin2000@gmail.com"
+  },
+  "homepage": "https://drsamonline.github.io/app-lantern/",
   "license": "SEE LICENSE IN LICENSE",
   "engines": {
     "node": ">=18"

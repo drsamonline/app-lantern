@@ -345,7 +345,8 @@ async function main() {
     loneHealth = await ask("/api/health");
     if (!loneHealth) await new Promise((r) => setTimeout(r, 100));
   }
-  ok(loneHealth && loneHealth.status === 200, "the single file starts on its own (" + (said.split("\n")[0] || "no output") + ")");
+  ok(loneHealth && loneHealth.status === 200,
+     "the single file starts on its own (" + (said.trim().slice(0, 900) || "no output") + ")");
   const lonePage = loneHealth ? await ask("/") : null;
   ok(lonePage && lonePage.status === 200 && /Lantern/.test(lonePage.body),
      "the single file serves the client with no public/ folder beside it");

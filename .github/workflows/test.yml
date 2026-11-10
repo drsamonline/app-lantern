@@ -44,3 +44,26 @@ jobs:
           grep -q '"ok":true' /tmp/health.json
           curl -fsS http://127.0.0.1:8137/ | grep -q 'Lantern'
           kill $HOST_PID
+
+  test-windows:
+    # The desktop build is Windows and Linux. Until this job existed the suite
+    # only ever ran on Ubuntu, so a Windows-only failure stayed invisible until
+    # a tag — which is how v1.2.0 shipped a red Desktop build.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Lantern suite
+        run: node test-node.js
+      - name: The build is current
+        shell: bash
+        run: |
+          node tools/build.mjs
+          if ! git diff --quiet -- docs/demo/library.json dist/; then
+            echo "::error::the committed build is stale - run node tools/build.mjs and commit the result"
+            git --no-pager diff --stat -- docs/demo/library.json dist/
+            exit 1
+          fi
+

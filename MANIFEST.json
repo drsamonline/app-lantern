@@ -39,10 +39,10 @@
       "at": "2026-11-10T09:53:57Z"
     },
     "package.json": {
-      "sha": "fd9526bb052981eb8c0ded6c852d9324619d42c1",
-      "producer": "tools/build.mjs@1.2.0",
-      "class": "generated",
-      "at": "2026-11-10T09:53:57Z"
+      "sha": "c6aeeb47c34e9865a992712b9a220ff1f8a7a0f6",
+      "producer": "audit-2026-11-10",
+      "class": "agent",
+      "at": "2026-11-10T09:59:15Z"
     },
     "dist/lantern.js": {
       "sha": "a8429e4f7ef10367f9d5586fac8c37efcfeb5271",
@@ -67,7 +67,25 @@
       "producer": "tools/build.mjs@1.2.0",
       "class": "generated",
       "at": "2026-11-10T09:53:57Z"
+    },
+    "test-node.js": {
+      "sha": "382a5e836dc9d4f559959751b7688c80c2132292",
+      "producer": "audit-2026-11-10",
+      "class": "agent",
+      "at": "2026-11-10T09:59:15Z"
+    },
+    ".github/workflows/test.yml": {
+      "sha": "72c5904207c24b748ca0acee44ae11c9da498cda",
+      "producer": "audit-2026-11-10",
+      "class": "agent",
+      "at": "2026-11-10T09:59:15Z"
+    },
+    ".github/workflows/desktop.yml": {
+      "sha": "b74ecdfa4c41023c738ebb84dd8fbdc583bf556f",
+      "producer": "audit-2026-11-10",
+      "class": "agent",
+      "at": "2026-11-10T09:59:15Z"
     }
   },
-  "updated": "2026-11-10T09:53:57Z"
+  "updated": "2026-11-10T09:59:15Z"
 }
