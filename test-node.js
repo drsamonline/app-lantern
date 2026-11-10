@@ -363,7 +363,18 @@ async function main() {
   ok(loneIcon && loneIcon.status === 200 && /<svg/.test(loneIcon.body),
      "the single file serves the icon it carries");
   child.kill();
-  fs.rmSync(lone, { recursive: true, force: true });
+  /* Windows holds the file for a moment after the kill, and rmSync then throws
+     EBUSY on the temp folder. Wait for the child to actually exit, and treat the
+     cleanup as best-effort: a temp directory is not worth a red build. */
+  await new Promise((resolve) => {
+    if (child.exitCode !== null) return resolve();
+    child.once("exit", resolve);
+    setTimeout(resolve, 2000);
+  });
+  for (let i = 0; i < 5; i++) {
+    try { fs.rmSync(lone, { recursive: true, force: true }); break; }
+    catch (e) { if (i === 4) break; await new Promise((r) => setTimeout(r, 200)); }
+  }
 
   /* 14b. The two modes. Both default safe, and both are enforced by the server. */
   const settings0 = await (await get("/api/settings")).json();
