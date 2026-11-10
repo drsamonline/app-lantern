@@ -1,0 +1,23 @@
+# Line endings, fixed once.
+#
+# A CRLF shebang is a syntax error to Node 20: the bundle at dist/lantern.js
+# begins with #!/usr/bin/env node, so a Windows checkout that converted it to
+# CRLF produced a file Node refused to parse ("Invalid or unexpected token").
+# That failed three assertions in test-node.js and every Desktop build.
+#
+# Everything is LF, in the repository and in every working tree. The Windows
+# launchers are the exception — cmd.exe reads CRLF more reliably than LF.
+* text=auto eol=lf
+
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.sh  text eol=lf
+
+# Binary — never touched by a line-ending filter.
+*.zip   binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.ico   binary
+*.icns  binary
+*.woff2 binary

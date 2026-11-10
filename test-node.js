@@ -318,6 +318,15 @@ async function main() {
 
   /* The single file must be the WHOLE app: copied alone into an empty folder,
      with no public/ beside it, it still serves the page and the icon. */
+  /* 13b. The bundle is LF, and starts with the shebang and not a BOM.
+     A CRLF shebang is a syntax error to Node 20 — which is exactly how the
+     Desktop build failed on Windows: the checkout converted the file, and the
+     copy that was supposed to run on its own would not parse. */
+  const bundle = fs.readFileSync(path.join(repoRoot, "dist", "lantern.js"));
+  ok(bundle[0] === 0x23 && bundle[1] === 0x21, "the bundle starts with #!, not a BOM");
+  ok(bundle.indexOf(Buffer.from("\r\n")) === -1,
+     "the bundle is LF-only — a CRLF shebang will not parse");
+
   const lone = fs.mkdtempSync(path.join(os.tmpdir(), "lantern-lone-"));
   fs.copyFileSync(path.join(repoRoot, "dist", "lantern.js"), path.join(lone, "lantern.js"));
   const env = Object.assign({}, process.env);

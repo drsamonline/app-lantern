@@ -85,7 +85,13 @@
       "producer": "audit-2026-11-10",
       "class": "agent",
       "at": "2026-11-10T09:59:15Z"
+    },
+    ".gitattributes": {
+      "sha": "41357afe40c5acbe90d50326be1d1ee7a09e6987",
+      "producer": "audit-2026-11-10",
+      "class": "agent",
+      "at": "2026-11-10T10:01:36Z"
     }
   },
-  "updated": "2026-11-10T09:59:15Z"
+  "updated": "2026-11-10T10:01:36Z"
 }
