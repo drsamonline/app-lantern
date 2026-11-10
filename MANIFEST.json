@@ -51,16 +51,16 @@
       "at": "2026-11-10T09:53:57Z"
     },
     "dist/lantern.zip": {
-      "sha": "d059926d0f083e35548b9be108387fb641a53a4c",
+      "sha": "e347e7a9870e09a2221e8eb09036a32d062aec36",
       "producer": "tools/build.mjs@1.2.0",
       "class": "generated",
-      "at": "2026-11-10T09:53:57Z"
+      "at": "2026-11-10T10:02:30Z"
     },
     "dist/lantern-1.2.0.zip": {
-      "sha": "d059926d0f083e35548b9be108387fb641a53a4c",
+      "sha": "e347e7a9870e09a2221e8eb09036a32d062aec36",
       "producer": "tools/build.mjs@1.2.0",
       "class": "generated",
-      "at": "2026-11-10T09:53:57Z"
+      "at": "2026-11-10T10:02:30Z"
     },
     "docs/demo/library.json": {
       "sha": "f02d563b87543ec3b557a760fe4d57e7746b4710",
@@ -93,5 +93,5 @@
       "at": "2026-11-10T10:01:36Z"
     }
   },
-  "updated": "2026-11-10T10:01:43Z"
+  "updated": "2026-11-10T10:02:30Z"
 }
