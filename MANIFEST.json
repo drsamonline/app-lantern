@@ -3,10 +3,10 @@
   "locked": false,
   "files": {
     "README.md": {
-      "sha": "3ce209d22f195fadb9772012353971a862801489",
-      "producer": "bootstrap@2026-11-04",
-      "class": "generated",
-      "at": "2026-11-04T20:01:17Z"
+      "sha": "f98efeea2886eaeb693aa19057d907418a6f7892",
+      "producer": "audit-2026-11-10",
+      "class": "agent",
+      "at": "2026-11-10T09:53:56Z"
     },
     "docs/index.html": {
       "sha": "4c96ff0662301618c2985a43fa006fa0012f2e46",
@@ -15,10 +15,10 @@
       "at": "2026-11-04T20:01:17Z"
     },
     "docs/play/index.html": {
-      "sha": "be639723d430e5a4215da0261bf7921151f79d0f",
-      "producer": "bootstrap@2026-11-04",
-      "class": "generated",
-      "at": "2026-11-04T20:01:17Z"
+      "sha": "936c037303ab07b649c0e60b1683bb7c2257cd4f",
+      "producer": "audit-2026-11-10",
+      "class": "agent",
+      "at": "2026-11-10T09:53:56Z"
     },
     "docs/assets/support-portrait.jpg": {
       "sha": "c2150f09a5c10d616faf049f8e516d6fffd1a269",
@@ -31,7 +31,43 @@
       "producer": "human",
       "class": "generated",
       "at": "2026-11-06T10:53:37Z"
+    },
+    "CHANGELOG.md": {
+      "sha": "2b61bbc8cf584048d5319aa7673ff23a01bda3c5",
+      "producer": "audit-2026-11-10",
+      "class": "hand",
+      "at": "2026-11-10T09:53:57Z"
+    },
+    "package.json": {
+      "sha": "fd9526bb052981eb8c0ded6c852d9324619d42c1",
+      "producer": "tools/build.mjs@1.2.0",
+      "class": "generated",
+      "at": "2026-11-10T09:53:57Z"
+    },
+    "dist/lantern.js": {
+      "sha": "a8429e4f7ef10367f9d5586fac8c37efcfeb5271",
+      "producer": "tools/build.mjs@1.2.0",
+      "class": "generated",
+      "at": "2026-11-10T09:53:57Z"
+    },
+    "dist/lantern.zip": {
+      "sha": "d059926d0f083e35548b9be108387fb641a53a4c",
+      "producer": "tools/build.mjs@1.2.0",
+      "class": "generated",
+      "at": "2026-11-10T09:53:57Z"
+    },
+    "dist/lantern-1.2.0.zip": {
+      "sha": "d059926d0f083e35548b9be108387fb641a53a4c",
+      "producer": "tools/build.mjs@1.2.0",
+      "class": "generated",
+      "at": "2026-11-10T09:53:57Z"
+    },
+    "docs/demo/library.json": {
+      "sha": "f02d563b87543ec3b557a760fe4d57e7746b4710",
+      "producer": "tools/build.mjs@1.2.0",
+      "class": "generated",
+      "at": "2026-11-10T09:53:57Z"
     }
   },
-  "updated": "2026-11-06T10:53:37Z"
+  "updated": "2026-11-10T09:53:57Z"
 }

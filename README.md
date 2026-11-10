@@ -209,6 +209,23 @@ with a nice font — so `tools/audit.mjs` fails if the demo ever stops using it.
   for the LAN address helpers (`Lan.hostUrl`), so the page and the host agree on
   what address a phone should open.
 
+## Support
+
+Lantern is one person's work: no company, no ads, no tracking, no paid tier, and it stays
+free. If it saved you an afternoon, a contribution keeps the next one coming — any amount,
+or none.
+
+| | |
+|---|---|
+| **UPI** | `drsohilboi@ybl` |
+| **Ko-fi** | [ko-fi.com/matneo](https://ko-fi.com/matneo) |
+| **PayPal** | [paypal.me/drsohilmomin](https://paypal.me/drsohilmomin?locale.x=en_GB&country.x=IN) |
+| **Email** | [sohilmomin2000@gmail.com](mailto:sohilmomin2000@gmail.com) — bugs, corrections, requests |
+| **Elsewhere** | [all projects](https://drsamonline.github.io/) · [books](https://www.amazon.com/stores/author/B08ZT331LY/allbooks) |
+
+The same block, with the portrait and the UPI QR, sits in the footer of the
+[landing page](https://drsamonline.github.io/app-lantern/#support).
+
 ## Licence
 
 PolyForm Noncommercial 1.0.0 — see [LICENSE](LICENSE). © 2026 Dr Sohil Momin.
