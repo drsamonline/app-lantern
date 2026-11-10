@@ -1,6 +1,6 @@
 {
   "name": "app-lantern",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "description": "Lantern — serve a whole library of offline content over the LAN. Zero runtime dependencies.",
   "author": {

@@ -33,28 +33,28 @@
       "at": "2026-11-06T10:53:37Z"
     },
     "CHANGELOG.md": {
-      "sha": "2b61bbc8cf584048d5319aa7673ff23a01bda3c5",
+      "sha": "c9012f879f1353e3022813967ff0744ff955ad02",
       "producer": "audit-2026-11-10",
       "class": "hand",
-      "at": "2026-11-10T09:53:57Z"
+      "at": "2026-11-10T10:05:54Z"
     },
     "package.json": {
-      "sha": "c6aeeb47c34e9865a992712b9a220ff1f8a7a0f6",
-      "producer": "audit-2026-11-10",
-      "class": "agent",
-      "at": "2026-11-10T09:59:15Z"
+      "sha": "e2517d5438619c7e30455da27a0d0eb2fdf5d27d",
+      "producer": "tools/build.mjs@1.2.1",
+      "class": "generated",
+      "at": "2026-11-10T10:05:54Z"
     },
     "dist/lantern.js": {
-      "sha": "a8429e4f7ef10367f9d5586fac8c37efcfeb5271",
-      "producer": "tools/build.mjs@1.2.0",
+      "sha": "afb1b4fa6db9995e0ef6e3328c7b559ea9121ad3",
+      "producer": "tools/build.mjs@1.2.1",
       "class": "generated",
-      "at": "2026-11-10T09:53:57Z"
+      "at": "2026-11-10T10:05:54Z"
     },
     "dist/lantern.zip": {
-      "sha": "e347e7a9870e09a2221e8eb09036a32d062aec36",
-      "producer": "tools/build.mjs@1.2.0",
+      "sha": "61414ea69e552a090a5321850ffba2ca569da4c7",
+      "producer": "tools/build.mjs@1.2.1",
       "class": "generated",
-      "at": "2026-11-10T10:02:30Z"
+      "at": "2026-11-10T10:05:54Z"
     },
     "dist/lantern-1.2.0.zip": {
       "sha": "e347e7a9870e09a2221e8eb09036a32d062aec36",
@@ -91,7 +91,13 @@
       "producer": "audit-2026-11-10",
       "class": "agent",
       "at": "2026-11-10T10:01:36Z"
+    },
+    "dist/lantern-1.2.1.zip": {
+      "sha": "61414ea69e552a090a5321850ffba2ca569da4c7",
+      "producer": "tools/build.mjs@1.2.1",
+      "class": "generated",
+      "at": "2026-11-10T10:05:54Z"
     }
   },
-  "updated": "2026-11-10T10:03:20Z"
+  "updated": "2026-11-10T10:05:54Z"
 }

@@ -4,6 +4,28 @@ Every version here is a tag on this repository, and every tag carries the built 
 release asset. The version in `package.json` is the version in the tag — `v1.2.0` is
 `"version": "1.2.0"`, and a release that disagrees with that file is a mistake, not a variant.
 
+## 1.2.1 — 2026-11-10
+
+### Fixed
+
+- **The Desktop build was never green.** It had only ever run on a tag, and on `v1.2.0` it failed
+  on both runners: Linux refused the `.deb` for want of an author email in `package.json` (there
+  was no author field at all), and Windows failed three assertions in the single-file test.
+- **A CRLF shebang is a syntax error.** The Windows failure was line endings: the checkout
+  converted `dist/lantern.js` to CRLF, and Node 20 will not parse `#!/usr/bin/env node` when the
+  line ends in `\r`. `.gitattributes` now pins every text file to LF in every working tree, with
+  the two Windows launchers the exception, and two assertions hold the line — the bundle must
+  start with `#!` and carry no CRLF.
+- **The suite removed a temp folder a live child still held**, which threw `EBUSY` on Windows and
+  took the run down with it. It now waits for the child to exit and treats the cleanup as
+  best-effort.
+
+### Added
+
+- A `windows-latest` job in the test workflow, and a `main` trigger on the desktop workflow. The
+  reason this reached a tag at all is that neither existed: the suite only ran on Ubuntu and the
+  desktop build only ran on tags.
+
 ## 1.2.0 — 2026-11-10
 
 ### Added

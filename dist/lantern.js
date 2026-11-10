@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* Lantern 1.2.0 — the whole app in one file.
+/* Lantern 1.2.1 — the whole app in one file.
  * Built by tools/build.mjs from server.js, lib/search.js and public/.
  * Run: node lantern.js [port]
  * PolyForm Noncommercial 1.0.0. (c) 2026 Dr Sohil Momin. */
