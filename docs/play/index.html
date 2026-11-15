@@ -112,6 +112,11 @@
     .lamp{order:-1}.lamp svg{width:min(180px,55%)}
   }
 </style>
+<style>
+/* ---- a11y: the rule each label needs, chosen against its measured surface -- */
+[data-theme="light"] a.btn{color:#ffffff!important}   /* 4.04 -> 4.66:1 on rgb(168,100,26) */
+[data-theme="dark"] a.btn.ghost{color:#ffffff!important}   /* 1.01 -> 19.07:1 on rgb(13,16,20) */
+</style>
 </head>
 <body>
 
